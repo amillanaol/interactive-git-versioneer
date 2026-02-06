@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "interactive-git-versioneer"
+version = "1.0.0"
+authors = [
+  { name="amillanaol", email="alexis.millanao@protonmail.com" },
+]
+description = "InteractiveGitVersioneer - Gestor interactivo de versiones Git con soporte para tags, releases de GitHub y generación de mensajes con IA (Groq/OpenAI). Incluye modo CI/CD para pipelines automatizados."
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Environment :: Console",
+]
+dependencies = [
+    "GitPython>=3.1.0",
+    "openai>=1.0.0",
+]
+
+[project.scripts]
+igv = "interactive_git_versioneer.main:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.setuptools_scm]
+write_to = "src/interactive_git_versioneer/_version.py"
