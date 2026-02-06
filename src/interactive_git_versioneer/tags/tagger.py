@@ -9,6 +9,7 @@ from typing import List, Optional
 
 import git
 
+from .. import __version__
 from ..config import run_config_menu
 from ..core.git_ops import (
     get_commit_diff,
@@ -632,7 +633,7 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
     # Encabezado inicial
     print()
     print(f"{Colors.CYAN}{'=' * 49}{Colors.RESET}")
-    print(f"{Colors.CYAN}{'GESTOR DE VERSIONES GIT'.center(49)}{Colors.RESET}")
+    print(f"{Colors.CYAN}{f'GESTOR DE VERSIONES GIT v{__version__}'.center(49)}{Colors.RESET}")
     print(f"{Colors.CYAN}{'=' * 49}{Colors.RESET}")
     print()
 
@@ -711,7 +712,7 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
             username = (
                 author_email.split("@")[0] if "@" in author_email else author_email
             )
-            return f"{Colors.WHITE}Último autor: {username} | igv v{__version__}{Colors.RESET}"
+            return f"{Colors.WHITE}Autor: {username} | igv v{__version__}{Colors.RESET}"
         except Exception:
             return f"{Colors.CYAN}igv v{__version__}{Colors.RESET}"
 
