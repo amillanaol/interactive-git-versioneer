@@ -23,16 +23,25 @@ Gestor interactivo de versiones Git con soporte para tags, releases de GitHub y 
 - **Generación con IA**: Integración Groq/OpenAI para mensajes automáticos
 - **Arquitectura Modular**: Sistema de menús extensible
 
-## Instalación Rápida
+## Instalación
 
-**Requisitos:** Python >= 3.7, GitPython >= 3.1.0, openai >= 1.0.0
-**Opcional:** GitHub CLI (`gh`) para funciones de releases
+### Instalación desde PyPI (Recomendado)
+
+```bash
+pip install interactive-git-versioneer
+```
+
+### Instalación desde el Repositorio (Desarrollo)
 
 ```bash
 git clone https://github.com/amillanaol/interactive-git-versioneer.git
 cd interactive-git-versioneer
 pip install -e .
 ```
+
+**Requisitos:** Python >= 3.7
+
+**Opcional:** GitHub CLI (`gh`) para funciones de releases
 
 ## Uso Básico
 
