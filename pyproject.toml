@@ -11,7 +11,7 @@ authors = [
 description = "InteractiveGitVersioneer - Gestor interactivo de versiones Git con soporte para tags, releases de GitHub y generación de mensajes con IA (Groq/OpenAI). Incluye modo CI/CD para pipelines automatizados."
 readme = "README.md"
 requires-python = ">=3.7"
-license = {text = "MIT"}
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
