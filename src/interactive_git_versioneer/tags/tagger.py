@@ -34,6 +34,7 @@ from .actions import apply_tags, clean_all_tags, push_tags_to_remote
 from .ai import auto_generate_all_with_ai
 from .menus import run_commits_submenu
 from .views import show_local_tags, show_remote_tags
+from .ui import select_tag_from_list
 
 # Re-exportar para compatibilidad hacia atrás
 __all__ = [
@@ -47,183 +48,6 @@ __all__ = [
     "apply_tags",
     "parse_version",
 ]
-
-
-def select_tag_from_list(
-    repo: git.Repo, tags: List[git.TagReference], items_per_page: int = 10
-) -> Optional[git.TagReference]:
-    """Permite al usuario seleccionar un tag de una lista paginada.
-
-    Args:
-        repo: Repositorio Git.
-        tags: Lista de objetos git.TagReference.
-        items_per_page: Cantidad de tags por página.
-
-    Returns:
-        Optional[git.TagReference]: Objeto TagReference seleccionado, o None si cancela.
-    """
-    if not tags:
-        print(f"{Colors.YELLOW}No hay tags disponibles para seleccionar.{Colors.RESET}")
-        wait_for_enter()
-        return None
-
-    total_tags = len(tags)
-    total_pages = (total_tags + items_per_page - 1) // items_per_page
-    current_page = 1
-
-    while True:
-        clear_screen()
-        start_idx = (current_page - 1) * items_per_page
-        end_idx = min(start_idx + items_per_page, total_tags)
-
-        print_header(
-            f"SELECCIONAR TAG ({total_tags} encontrados) - Página {current_page}/{total_pages}"
-        )
-        print()
-
-        for i, tag in enumerate(tags[start_idx:end_idx], start=start_idx + 1):
-            tag_commit = tag.commit
-            message = tag_commit.message.split("\n")[0]
-            date = tag_commit.committed_datetime.strftime("%Y-%m-%d %H:%M")
-            print(
-                f"{Colors.CYAN}{i:3}. {tag.name:<15}{Colors.RESET} - {tag_commit.hexsha[:7]} - {date} - {Colors.WHITE}{message}{Colors.RESET}"
-            )
-
-        print()
-        print(f"{Colors.CYAN}{'=' * 60}{Colors.RESET}")
-
-        nav_options = []
-        if current_page > 1:
-            nav_options.append(f"{Colors.YELLOW}p{Colors.WHITE}=anterior")
-        if current_page < total_pages:
-            nav_options.append(f"{Colors.YELLOW}n{Colors.WHITE}=siguiente")
-        nav_options.append(f"{Colors.YELLOW}0{Colors.WHITE}=cancelar")
-
-        print(f"{Colors.WHITE}Navegación: {' | '.join(nav_options)}{Colors.RESET}")
-        print(f"{Colors.WHITE}Ingrese número del tag para seleccionar:{Colors.RESET}")
-
-        choice = get_menu_input(f"{Colors.WHITE}>>> {Colors.RESET}").strip().lower()
-
-        if choice == "n" and current_page < total_pages:
-            current_page += 1
-        elif choice == "p" and current_page > 1:
-            current_page -= 1
-        elif (
-            choice == "0"
-            or choice == "-back-"
-            or choice == "-exit-"
-            or choice == "-quit-"
-            or choice == ""
-        ):
-            return None
-        else:
-            try:
-                idx = int(choice) - 1
-                if 0 <= idx < total_tags:
-                    return tags[idx]
-                else:
-                    print(f"{Colors.RED}Número fuera de rango.{Colors.RESET}")
-                    wait_for_enter()
-            except ValueError:
-                pass
-
-
-def manage_tags_interactive(repo, dry_run=False, push=False):
-    """Interfaz interactiva para gestionar y modificar tags existentes."""
-    while True:
-        all_tags = sorted(repo.tags, key=lambda t: parse_version(t.name), reverse=True)
-
-        if not all_tags:
-            clear_screen()
-            print_header("GESTIONAR TAGS")
-            print(f"{Colors.YELLOW}No hay tags para gestionar.{Colors.RESET}")
-            print("Puede generarlos automáticamente continuando con el proceso.")
-            wait_for_enter()
-            return
-
-        clear_screen()
-        print_header("GESTIONAR TAGS EXISTENTES")
-        print(f"{Colors.WHITE}Tags encontrados: {len(all_tags)}{Colors.RESET}\n")
-
-        print(f"{Colors.WHITE}1. Ver tags en lista paginada{Colors.RESET}")
-        print(f"{Colors.WHITE}2. Modificar un tag existente{Colors.RESET}")
-        print(f"{Colors.WHITE}0. Volver{Colors.RESET}")
-
-        choice = get_menu_input("Seleccione una opción: ")
-
-        if choice == "1":
-            # Usar select_tag_from_list como visor paginado
-            select_tag_from_list(repo, all_tags)
-        elif choice == "2":
-            selected_tag = select_tag_from_list(repo, all_tags)
-            if selected_tag:
-                print_info("Tag seleccionado:", selected_tag.name, Colors.CYAN)
-                new_tag_name = get_menu_input(
-                    f"Nuevo nombre para '{selected_tag.name}': "
-                )
-
-                if not new_tag_name:
-                    print(
-                        f"{Colors.RED}El nombre del tag no puede estar vacío.{Colors.RESET}"
-                    )
-                    wait_for_enter()
-                    continue
-
-                if dry_run:
-                    print(
-                        f"{Colors.YELLOW}[DRY-RUN] Renombrar tag '{selected_tag.name}' a '{new_tag_name}'{Colors.RESET}"
-                    )
-                    print(
-                        f"{Colors.YELLOW}[DRY-RUN] Comando: git tag {new_tag_name} {selected_tag.commit.hexsha}{Colors.RESET}"
-                    )
-                    print(
-                        f"{Colors.YELLOW}[DRY-RUN] Comando: git tag -d {selected_tag.name}{Colors.RESET}"
-                    )
-                    if push:
-                        print(
-                            f"{Colors.YELLOW}[DRY-RUN] Comando: git push origin :{selected_tag.name} {new_tag_name}{Colors.RESET}"
-                        )
-                    wait_for_enter()
-                    continue
-
-                # Crear nuevo tag y borrar el antiguo
-                try:
-                    new_tag = repo.create_tag(
-                        new_tag_name,
-                        ref=selected_tag.commit,
-                        message=selected_tag.commit.message,
-                    )
-                    repo.delete_tag(selected_tag)
-
-                    print(
-                        f"{Colors.GREEN}Tag '{selected_tag.name}' renombrado a '{new_tag.name}'{Colors.RESET}"
-                    )
-
-                    if push:
-                        print("Actualizando remoto...")
-                        try:
-                            repo.remotes.origin.push(f":{selected_tag.name}")
-                            repo.remotes.origin.push(new_tag.name)
-                            print(f"{Colors.GREEN}Remoto actualizado.{Colors.RESET}")
-                        except Exception as e:
-                            print(
-                                f"{Colors.RED}Error actualizando el remoto: {e}{Colors.RESET}"
-                            )
-
-                    wait_for_enter()
-                except Exception as e:
-                    print(f"{Colors.RED}Error al renombrar tag: {e}{Colors.RESET}")
-                    wait_for_enter()
-        elif (
-            choice == "0"
-            or choice == "-back-"
-            or choice == "-exit-"
-            or choice == "-quit-"
-        ):
-            return
-        else:
-            print(f"{Colors.RED}Opción inválida.{Colors.RESET}")
-            wait_for_enter()
 
 
 def run_modify_tag_submenu(repo):
@@ -633,7 +457,9 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
     # Encabezado inicial
     print()
     print(f"{Colors.CYAN}{'=' * 49}{Colors.RESET}")
-    print(f"{Colors.CYAN}{f'GESTOR DE VERSIONES GIT v{__version__}'.center(49)}{Colors.RESET}")
+    print(
+        f"{Colors.CYAN}{f'GESTOR DE VERSIONES GIT v{__version__}'.center(49)}{Colors.RESET}"
+    )
     print(f"{Colors.CYAN}{'=' * 49}{Colors.RESET}")
     print()
 
@@ -706,15 +532,20 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
         """Retorna el string de estado para el footer del menú."""
         from .. import __version__
 
+        version_label = get_last_tag(repo) or __version__
+        if not version_label.startswith("v"):
+            version_label = f"v{version_label}"
         try:
             head_commit = repo.head.commit
             author_email = head_commit.author.email
             username = (
                 author_email.split("@")[0] if "@" in author_email else author_email
             )
-            return f"{Colors.WHITE}Autor: {username} | igv v{__version__}{Colors.RESET}"
+            return (
+                f"{Colors.WHITE}Autor: {username} | igv {version_label}{Colors.RESET}"
+            )
         except Exception:
-            return f"{Colors.CYAN}igv v{__version__}{Colors.RESET}"
+            return f"{Colors.CYAN}igv {version_label}{Colors.RESET}"
 
     def action_manage_commits():
         """Abre el submenú de gestión de commits."""
