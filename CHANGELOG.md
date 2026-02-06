@@ -2,7 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-05 22:30*
+*Automatically generated with AI on 2026-02-05 23:59*
+
+## [v0.10.4] - 2026-02-05
+
+### 🔧 Cambios varios
+- Actualiza la visualización de la versión en la etiquetadora
+
+## [v0.10.3] - 2026-02-05
+
+Actualiza la documentación con el registro de cambios y la versión.
 
 ## [v0.10.2] - 2026-02-05
 
