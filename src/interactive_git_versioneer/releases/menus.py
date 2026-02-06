@@ -246,7 +246,18 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
         if save_changelog_from_progress(repo, changelog_path):
             print()
             print(
+                f"{Colors.GREEN}✓ Changelogs guardados exitosamente en CHANGELOG.md{Colors.RESET}"
+            )
+            print()
+            print(
                 f"{Colors.YELLOW}Recuerda hacer commit del archivo para persistir los cambios.{Colors.RESET}"
+            )
+        else:
+            print()
+            print(f"{Colors.RED}✗ No se pudieron guardar los changelogs.{Colors.RESET}")
+            print()
+            print(
+                f"{Colors.WHITE}Asegúrate de haber generado changelogs primero usando la opción '3. Continuar changelog (automático con IA)'.{Colors.RESET}"
             )
         wait_for_enter()
         return False
