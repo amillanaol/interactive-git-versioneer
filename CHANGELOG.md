@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-05 22:13*
+*Automatically generated with AI on 2026-02-05 22:30*
+
+## [v0.10.2] - 2026-02-05
+
+### 🔧 Cambios varios
+- Establecer la estructura y configuración inicial del proyecto
+
+## [v0.10.1] - 2026-02-05
+
+### Cambios importantes
+- Agrega una demostración rápida de IGV en formato GIF a la documentación.
 
 ## [v0.10.0] - 2026-02-05
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "interactive-git-versioneer"
-version = "1.0.0"
+version = "0.10.1"
 authors = [
   { name="amillanaol", email="alexis.millanao@protonmail.com" },
 ]
