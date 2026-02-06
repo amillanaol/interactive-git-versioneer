@@ -1,0 +1,17 @@
+# Python-specific
+__pycache__/
+*.egg-info/
+.pytest_cache
+
+# Build y distribución
+build/
+dist/
+
+# Credenciales
+.pypirc
+
+# Pyright configuration file
+pyrightconfig.json
+
+# VSCode settings folder
+.vscode/
