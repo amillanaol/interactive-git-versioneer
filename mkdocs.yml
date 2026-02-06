@@ -1,0 +1,24 @@
+site_name: Interactive Git Versioneer
+site_description: Documentación del proyecto Interactive Git Versioneer
+site_url: http://example.com
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - Modules:
+    - Core: modules/core_git_ops.md
+    - AI: modules/core_ai.md
+    - Tags: modules/tagger.md
+    - Releases: modules/releases.md
+  - API: api.md
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+markdown_extensions:
+  - toc:
+      permalink: true
+extra:
+  repository: "https://github.com/amillanaol/interactive-git-versioneer"
