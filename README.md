@@ -10,7 +10,7 @@ CLI para gestión de versiones semánticas con IA. Crea tags, genera changelogs 
 
 Aquí se mostrará un GIF animado ilustrando el flujo interactivo de `InteractiveGitVersioneer`.
 
-![Demostración Rápida](docs/_assets/igv-quick_demo.gif)
+![Demostración Rápida](https://github.com/amillanaol/interactive-git-versioneer/blob/main/docs/_assets/igv-quick_demo.gif)
 
 Gestor interactivo de versiones Git con soporte para tags, releases de GitHub y generación de mensajes con IA (Groq/OpenAI). Incluye modo CI/CD para pipelines automatizados.
 
