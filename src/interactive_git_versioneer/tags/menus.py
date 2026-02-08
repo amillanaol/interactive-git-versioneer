@@ -48,8 +48,9 @@ def show_commit_submenu(
                 f"PROCESANDO COMMIT [{commit_index + 1}/{len(all_commits)}]"
             )
 
+            display_message = commit.custom_message or commit.message
             print(
-                f"Commit: {Colors.CYAN}{commit.hash[:7]} - {commit.message}{Colors.RESET}"
+                f"Commit: {Colors.CYAN}{commit.hash[:7]} - {display_message}{Colors.RESET}"
             )
             print()
             print(f"{Colors.WHITE}1. Ver detalles completos{Colors.RESET}")
@@ -101,8 +102,9 @@ def show_commit_submenu(
                 print(f"{Colors.GREEN}Tipo asignado: PATCH - {next_ver}{Colors.RESET}")
 
             elif choice == "5":
+                display_message = commit.custom_message or commit.message
                 print()
-                print(f"Mensaje actual: {Colors.CYAN}{commit.message}{Colors.RESET}")
+                print(f"Mensaje actual: {Colors.CYAN}{display_message}{Colors.RESET}")
                 try:
                     custom_msg = input(
                         f"{Colors.WHITE}Ingrese mensaje personalizado (o Enter para mantener): {Colors.RESET}"
@@ -381,6 +383,24 @@ def run_tags_menu(
     def show_tags_status():
         """Muestra el estado actual de tags."""
         current_last_tag = get_last_tag(repo)
+        local_count = len(list(repo.tags))
+        print(f"{Colors.WHITE}Tags locales: {local_count}{Colors.RESET}")
+
+        try:
+            remote = repo.remotes.origin
+            ls_remote = repo.git.ls_remote("--tags", remote.name)
+            remote_tags = []
+            for line in ls_remote.split("\n"):
+                if line.strip() and not line.endswith("^{}"):
+                    parts = line.split()
+                    if len(parts) >= 2 and parts[1].startswith("refs/tags/"):
+                        remote_tags.append(parts[1].replace("refs/tags/", ""))
+            print(f"{Colors.WHITE}Tags remotos: {len(remote_tags)}{Colors.RESET}")
+        except Exception:
+            print(
+                f"{Colors.WHITE}Tags remotos: {Colors.YELLOW}(no disponible){Colors.RESET}"
+            )
+
         print(f"{Colors.WHITE}Commits sin etiquetar: {len(commits)}{Colors.RESET}")
         if current_last_tag:
             print(f"{Colors.WHITE}Última etiqueta: {current_last_tag}{Colors.RESET}")

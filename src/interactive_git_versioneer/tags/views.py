@@ -97,10 +97,11 @@ def show_commit_list(
             author = (
                 commit.author[:14] + "…" if len(commit.author) > 15 else commit.author
             )
+            message_source = commit.custom_message or commit.message
             message = (
-                commit.message[:34] + "…"
-                if len(commit.message) > 35
-                else commit.message
+                message_source[:34] + "…"
+                if len(message_source) > 35
+                else message_source
             )
 
             print(
