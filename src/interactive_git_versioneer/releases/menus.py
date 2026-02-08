@@ -60,6 +60,10 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
     Returns:
         bool: False para permanecer en el menú de releases
     """
+    from ..core.logger import get_logger
+
+    logger = get_logger()
+    logger.function_enter("run_changelog_submenu")
 
     def show_changelog_status():
         """Muestra el estado actual para changelogs."""
@@ -154,7 +158,12 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
         return False
 
     def action_auto_ai():
+        from ..core.logger import get_logger
+
+        logger = get_logger()
+        logger.function_enter("action_auto_ai", menu="GESTIÓN DE CHANGELOGS", option="3")
         action_generate_all_changelogs_with_ai(repo, rebuild=False)
+        logger.function_exit("action_auto_ai", return_value=False)
         return False
 
     def action_edit():
@@ -316,7 +325,9 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
     )
     menu.add_item("0", "Volver", action_back)
 
+    logger.info("Ejecutando menú de changelogs...")
     menu.run()
+    logger.function_exit("run_changelog_submenu", return_value=False)
     return False
 
 

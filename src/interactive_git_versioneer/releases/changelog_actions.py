@@ -163,6 +163,11 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
         repo: The Git repository object.
         rebuild: If True, regenerates all changelogs from scratch.
     """
+    from ..core.logger import get_logger
+
+    logger = get_logger()
+    logger.function_enter("action_generate_all_changelogs_with_ai", rebuild=rebuild)
+
     clear_screen()
     if rebuild:
         print_header("REBUILD CHANGELOGS (with AI)")
@@ -185,6 +190,9 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
     # Check for untagged commits
     untagged_commits = get_untagged_commits(repo)
     if untagged_commits:
+        logger.info(
+            f"Se detectaron {len(untagged_commits)} commits sin etiquetar - Mostrando diálogo de etiquetado"
+        )
         print(
             f"{Colors.YELLOW}⚠ Se detectaron {len(untagged_commits)} commit(s) sin etiquetar.{Colors.RESET}"
         )
@@ -203,6 +211,9 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
         )
         print()
 
+        logger.dialog_shown(
+            "UNTAGGED_COMMITS", "¿Desea etiquetar los commits con IA ahora?"
+        )
         try:
             choice = (
                 input(
@@ -211,13 +222,19 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
                 .strip()
                 .lower()
             )
+            logger.user_input("¿Desea etiquetar los commits con IA ahora?", choice)
         except KeyboardInterrupt:
             print()
             print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
+            logger.info("Usuario canceló con KeyboardInterrupt en diálogo de etiquetado")
             wait_for_enter()
+            logger.function_exit("action_generate_all_changelogs_with_ai")
             return
 
         if choice == "s":
+            logger.info(
+                "Usuario eligió etiquetar commits - Llamando a auto_generate_all_with_ai"
+            )
             # Call the AI tagging function (skip changelog check since we're updating it)
             auto_generate_all_with_ai(repo, untagged_commits, skip_changelog_check=True)
 
@@ -227,8 +244,16 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
             print(
                 f"{Colors.YELLOW}Para generar changelogs, vuelva a seleccionar la opción 'Continuar changelog (automático con IA)'.{Colors.RESET}"
             )
+            logger.info(
+                "Etiquetado completado - Retornando sin generar changelogs (usuario debe volver a seleccionar opción)"
+            )
             wait_for_enter()
+            logger.function_exit("action_generate_all_changelogs_with_ai")
             return
+        else:
+            logger.info(
+                f"Usuario eligió NO etiquetar commits (respuesta: '{choice}') - Continuando con generación de changelogs"
+            )
 
     tags: List[git.TagReference] = sorted(
         repo.tags, key=lambda t: t.commit.committed_date
@@ -394,6 +419,9 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
     # Ask if user wants to save to CHANGELOG.md
     if len(progress) > 0:
         changelog_exists = os.path.exists(changelog_path)
+        logger.info(
+            f"Changelogs generados: {len(progress)} - Mostrando diálogo de guardado"
+        )
 
         print(
             f"{Colors.YELLOW}¿Desea guardar los changelogs en el archivo CHANGELOG.md?{Colors.RESET}"
@@ -404,9 +432,15 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
             )
         print()
 
+        logger.dialog_shown(
+            "SAVE_CHANGELOG",
+            f"¿Desea guardar los changelogs en el archivo CHANGELOG.md? (existe={changelog_exists})",
+        )
         try:
             save_confirm = input(f"{Colors.WHITE}(s/n): {Colors.RESET}").strip().lower()
+            logger.user_input("¿Desea guardar los changelogs?", save_confirm)
             if save_confirm == "s":
+                logger.info("Usuario eligió guardar - Llamando a save_changelog_from_progress")
                 print()
                 if save_changelog_from_progress(repo, changelog_path):
                     print()
@@ -416,11 +450,18 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
                     print(
                         f"{Colors.YELLOW}Recuerda hacer commit del archivo para persistir los cambios.{Colors.RESET}"
                     )
+                    logger.info("Changelogs guardados exitosamente")
+                else:
+                    logger.error("Error al guardar changelogs")
+            else:
+                logger.info(f"Usuario eligió NO guardar (respuesta: '{save_confirm}')")
         except KeyboardInterrupt:
             print()
             print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
+            logger.info("Usuario canceló con KeyboardInterrupt en diálogo de guardado")
 
     wait_for_enter()
+    logger.function_exit("action_generate_all_changelogs_with_ai")
 
 
 def generate_all_missing_changelogs(repo: Repo) -> None:
