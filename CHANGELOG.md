@@ -2,7 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-05 23:59*
+*Automatically generated with AI on 2026-02-08 01:30*
+
+## [v0.11.1] - 2026-02-06
+
+### Cambios clave
+- Mueve la selección de etiquetas al módulo de interfaz de usuario
+
+## [v0.11.0] - 2026-02-06
+
+### Nuevo
+- Agrega mensajes de éxito y falla al guardar el registro de cambios en las versiones.
+
+## [v0.10.8] - 2026-02-06
+
+### Cambios importantes
+- Actualice las instrucciones de instalación en la documentación.
+
+## [v0.10.7] - 2026-02-06
+
+### Cambios
+
+- Simplifica el formato de licencia en pyproject.
+
+## [v0.10.6] - 2026-02-06
+
+### Correcciones de errores
+- Actualiza el enlace de la demostración de GIF en el archivo README.
+
+## [v0.10.5] - 2026-02-06
+
+Actualiza la documentación para incluir la guía de solución de problemas en el registro de cambios.
 
 ## [v0.10.4] - 2026-02-05
 
