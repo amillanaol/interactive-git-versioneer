@@ -99,6 +99,25 @@ GESTOR DE VERSIONES GIT
 └── 6. Salir
 ```
 
+## Debugging y Troubleshooting
+
+### Sistema de Logging
+
+Se ha implementado un sistema de logging automático que registra todas las acciones importantes en archivos de log para facilitar el debugging de problemas.
+
+- **Ubicación de logs**: `~/.igv_logs/igv_debug_YYYYMMDD_HHMMSS.log`
+- **Activación**: Se activa automáticamente al ejecutar la aplicación
+- **Documentación completa**: [LOGGING.md](./LOGGING.md)
+
+El sistema registra:
+- Entrada y salida de funciones críticas
+- Diálogos mostrados al usuario
+- Respuestas del usuario
+- Selección de opciones de menú
+- Eventos importantes
+
+Útil para debuguear problemas como diálogos duplicados o comportamientos inesperados.
+
 ## Documentación Completa
 
 - [Resumen de Documentación](./docs/01-entrada-navegacion/RESUMEN-DOCUMENTACION.md)
