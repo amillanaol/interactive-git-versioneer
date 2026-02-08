@@ -219,6 +219,45 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
         repo_root = repo.working_dir
         changelog_path = os.path.join(repo_root, "CHANGELOG.md")
 
+        progress = _load_changelog_progress(repo)
+        if not progress:
+            print(
+                f"{Colors.YELLOW}No hay changelogs generados en progreso para guardar.{Colors.RESET}"
+            )
+            print(
+                f"{Colors.WHITE}Primero genera changelogs con '3. Continuar changelog (automático con IA)' o '6. Reconstruir todos los changelogs (con IA)'.{Colors.RESET}"
+            )
+            wait_for_enter()
+            return False
+
+        last_tag = get_last_tag(repo)
+        if last_tag and not any(key.endswith(f"→{last_tag}") for key in progress):
+            print(
+                f"{Colors.YELLOW}⚠️  El progreso no incluye el último tag ({last_tag}).{Colors.RESET}"
+            )
+            print(
+                f"{Colors.WHITE}Genera el changelog pendiente con la opción 3 o 6 para incluirlo.{Colors.RESET}"
+            )
+            print()
+            try:
+                proceed = (
+                    input(
+                        f"{Colors.WHITE}¿Guardar igualmente con el progreso actual? (s/n): {Colors.RESET}"
+                    )
+                    .strip()
+                    .lower()
+                )
+            except KeyboardInterrupt:
+                print()
+                print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
+                wait_for_enter()
+                return False
+
+            if proceed != "s":
+                print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
+                wait_for_enter()
+                return False
+
         # Verificar si existe el archivo
         if os.path.exists(changelog_path):
             print(f"{Colors.YELLOW}⚠️  El archivo CHANGELOG.md ya existe.{Colors.RESET}")
