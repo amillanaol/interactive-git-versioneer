@@ -530,6 +530,18 @@ class Menu:
                         break
 
                 if selected_item:
+                    # Logging de selección de menú
+                    try:
+                        from .logger import is_logging_enabled, get_logger
+
+                        if is_logging_enabled():
+                            logger = get_logger()
+                            logger.info(
+                                f"Opción de menú seleccionada: [{self.title}] {choice}. {selected_item.label}"
+                            )
+                    except Exception:
+                        pass  # Si falla el logging, continuar sin él
+
                     result = selected_item.action()
                     # Si la acción retorna True, salir del menú
                     if result is True:

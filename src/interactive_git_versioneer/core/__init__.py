@@ -14,6 +14,7 @@ from .git_ops import (
     get_untagged_commits,
     parse_version,
 )
+from .logger import DebugLogger, get_logger, is_logging_enabled
 from .models import Commit
 from .ui import (
     Colors,
@@ -41,6 +42,10 @@ __all__ = [
     "get_untagged_commits",
     "get_commit_diff",
     "parse_version",
+    # Logger
+    "DebugLogger",
+    "get_logger",
+    "is_logging_enabled",
     # Models
     "Commit",
     # UI
