@@ -31,6 +31,12 @@ Gestor interactivo de versiones Git con soporte para tags, releases de GitHub y 
 pip install interactive-git-versioneer
 ```
 
+### Instalación desde Git
+
+```bash
+pip install git+https://github.com/amillanaol/interactive-git-versioneer.git
+```
+
 ### Instalación desde el Repositorio (Desarrollo)
 
 ```bash
@@ -143,10 +149,23 @@ El sistema registra:
 - [Plan de Etiquetado de Versiones](./docs/plan-versionado-analisis/plan-etiquetado-versiones.md)
 - [Resumen Visual de Versiones](./docs/plan-versionado-analisis/resumen-visual-versiones.md)
 
+
+---
+
+## 💖 Support My Work
+
+**[ES] Español:**  
+¡considera invitarme un café para que pueda seguir creando y compartiendo más! ☕
+
+**[EN] English:**  
+Please consider buying me a coffee so I can keep creating and sharing more! ☕
+
+**[BR] Português:**  
+Considere me pagar um café para que eu possa continuar criando e compartilhando mais! ☕
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/amillanaol)
+
+
 ## Licencia
 
 Este proyecto se distribuye bajo la Licencia MIT. Consulte el archivo [LICENSE](./LICENSE) para más información.
-
-## Contribuciones
-
-Las contribuciones son bienvenidas. Por favor, abra un *issue* para discutir los cambios propuestos o envíe un *pull request*.
