@@ -191,10 +191,21 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
     untagged_commits = get_untagged_commits(repo)
     if untagged_commits:
         logger.info(
-            f"Se detectaron {len(untagged_commits)} commits sin etiquetar - Mostrando diálogo de etiquetado"
+            f"Se detectaron {len(untagged_commits)} commits sin etiquetar - Mostrando advertencia"
+        )
+        print()
+        print(
+            f"{Colors.RED}╔══════════════════════════════════════════════════════════════╗{Colors.RESET}"
         )
         print(
-            f"{Colors.YELLOW}⚠ Se detectaron {len(untagged_commits)} commit(s) sin etiquetar.{Colors.RESET}"
+            f"{Colors.RED}║  ⚠️  ADVERTENCIA: COMMITS SIN ETIQUETAR                      ║{Colors.RESET}"
+        )
+        print(
+            f"{Colors.RED}╚══════════════════════════════════════════════════════════════╝{Colors.RESET}"
+        )
+        print()
+        print(
+            f"{Colors.YELLOW}Se detectaron {len(untagged_commits)} commit(s) sin etiquetar:{Colors.RESET}"
         )
         print()
         for i, commit in enumerate(untagged_commits[:5], 1):
@@ -207,53 +218,25 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
             )
         print()
         print(
-            f"{Colors.WHITE}Para generar changelogs completos, primero debe etiquetar estos commits.{Colors.RESET}"
+            f"{Colors.YELLOW}Para generar changelogs completos, primero debe etiquetar estos commits.{Colors.RESET}"
         )
         print()
-
-        logger.dialog_shown(
-            "UNTAGGED_COMMITS", "¿Desea etiquetar los commits con IA ahora?"
+        print(
+            f"{Colors.WHITE}Por favor, vaya a:{Colors.RESET}"
         )
-        try:
-            choice = (
-                input(
-                    f"{Colors.WHITE}¿Desea etiquetar los commits con IA ahora? (s/n): {Colors.RESET}"
-                )
-                .strip()
-                .lower()
-            )
-            logger.user_input("¿Desea etiquetar los commits con IA ahora?", choice)
-        except KeyboardInterrupt:
-            print()
-            print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
-            logger.info("Usuario canceló con KeyboardInterrupt en diálogo de etiquetado")
-            wait_for_enter()
-            logger.function_exit("action_generate_all_changelogs_with_ai")
-            return
-
-        if choice == "s":
-            logger.info(
-                "Usuario eligió etiquetar commits - Llamando a auto_generate_all_with_ai"
-            )
-            # Call the AI tagging function (skip changelog check since we're updating it)
-            auto_generate_all_with_ai(repo, untagged_commits, skip_changelog_check=True)
-
-            # Etiquetado completado, retornar sin continuar con changelogs
-            print()
-            print(f"{Colors.GREEN}✓ Etiquetado completado.{Colors.RESET}")
-            print(
-                f"{Colors.YELLOW}Para generar changelogs, vuelva a seleccionar la opción 'Continuar changelog (automático con IA)'.{Colors.RESET}"
-            )
-            logger.info(
-                "Etiquetado completado - Retornando sin generar changelogs (usuario debe volver a seleccionar opción)"
-            )
-            wait_for_enter()
-            logger.function_exit("action_generate_all_changelogs_with_ai")
-            return
-        else:
-            logger.info(
-                f"Usuario eligió NO etiquetar commits (respuesta: '{choice}') - Continuando con generación de changelogs"
-            )
+        print(
+            f"{Colors.CYAN}  Menú Principal → 2. Tags → 8. Generar tags con IA{Colors.RESET}"
+        )
+        print()
+        print(
+            f"{Colors.WHITE}Una vez etiquetados, regrese aquí para generar los changelogs.{Colors.RESET}"
+        )
+        logger.info(
+            "Operación cancelada - El usuario debe etiquetar commits primero desde el menú de Tags"
+        )
+        wait_for_enter()
+        logger.function_exit("action_generate_all_changelogs_with_ai")
+        return
 
     tags: List[git.TagReference] = sorted(
         repo.tags, key=lambda t: t.commit.committed_date

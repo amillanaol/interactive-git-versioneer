@@ -10,6 +10,11 @@ except ImportError:
     print("Install it with: pip install GitPython")
     sys.exit(1)
 
+try:
+    from packaging.version import parse as parse_version
+except ImportError:
+    parse_version = None
+
 from ..core.git_ops import get_last_tag, get_untagged_commits
 from ..core.ui import Colors, Menu, wait_for_enter
 from ..core.version_ops import action_update_project_version
@@ -82,54 +87,91 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
         repo_root = repo.working_dir
         changelog_path = os.path.join(repo_root, "CHANGELOG.md")
         last_file_changelog = None
+        last_file_changelog_date = None
         total_changelogs_in_file = 0
         if os.path.exists(changelog_path):
             try:
                 with open(changelog_path, "r", encoding="utf-8") as f:
                     content = f.read()
-                # Contar todas las versiones en el archivo
-                all_versions = re.findall(r"##\s*\[([^\]]+)\]", content)
-                total_changelogs_in_file = len(all_versions)
-                if all_versions:
-                    last_file_changelog = all_versions[0]
+                # Contar todas las versiones en el archivo (con fecha)
+                all_versions_with_dates = re.findall(
+                    r"##\s*\[([^\]]+)\]\s*-\s*(\d{4}-\d{2}-\d{2})", content
+                )
+                total_changelogs_in_file = len(all_versions_with_dates)
+                if all_versions_with_dates:
+                    last_file_changelog = all_versions_with_dates[0][0]
+                    last_file_changelog_date = all_versions_with_dates[0][1]
             except Exception:
                 pass
 
-        # Calcular changelogs pendientes (tags sin changelog)
-        pending_changelogs = (
+        # Calcular changelogs pendientes (tags sin changelog + commits sin tag que necesitarán changelog)
+        pending_tags = (
             total_tags - total_changelogs_in_file
             if total_tags > total_changelogs_in_file
             else 0
         )
+        total_pending = pending_tags + num_untagged
+        total_expected = (
+            total_tags + num_untagged
+        )  # Total esperado incluye tags actuales + futuros tags de commits pendientes
+
+        # El changelog está completo solo si no hay tags pendientes Y no hay commits sin etiquetar
+        is_complete = total_pending == 0
 
         # Mostrar changelogs registrados primero
         if total_changelogs_in_file > 0:
-            if pending_changelogs > 0:
+            if is_complete:
                 print(
-                    f"{Colors.WHITE}Changelogs registrados: {total_changelogs_in_file}/{total_tags} {Colors.YELLOW}⚠ {pending_changelogs} pendiente(s){Colors.RESET}"
+                    f"{Colors.WHITE}Changelogs registrados: {total_changelogs_in_file}/{total_expected} {Colors.GREEN}✓ completo{Colors.RESET}"
+                )
+            elif total_pending > 0:
+                print(
+                    f"{Colors.WHITE}Changelogs registrados: {total_changelogs_in_file}/{total_expected} {Colors.YELLOW}⚠ {total_pending} pendiente(s){Colors.RESET}"
                 )
             else:
                 print(
-                    f"{Colors.WHITE}Changelogs registrados: {total_changelogs_in_file}/{total_tags} {Colors.GREEN}✓ completo{Colors.RESET}"
+                    f"{Colors.WHITE}Changelogs registrados: {total_changelogs_in_file}/{total_expected} {Colors.YELLOW}⚠ incompleto{Colors.RESET}"
                 )
         else:
             print(
-                f"{Colors.WHITE}Changelogs registrados: 0/{total_tags} {Colors.YELLOW}⚠ {total_tags} pendiente(s){Colors.RESET}"
+                f"{Colors.WHITE}Changelogs registrados: 0/{total_expected} {Colors.YELLOW}⚠ {total_expected} pendiente(s){Colors.RESET}"
             )
 
         # Mostrar último changelog en el archivo
         if last_file_changelog:
-            if last_tag and last_file_changelog == last_tag:
-                print(
-                    f"{Colors.WHITE}Último changelog (archivo): {last_file_changelog} {Colors.GREEN}✓ al día{Colors.RESET}"
-                )
-            elif last_tag:
-                print(
-                    f"{Colors.WHITE}Último changelog (archivo): {last_file_changelog} {Colors.YELLOW}⚠ desactualizado{Colors.RESET}"
-                )
+            date_str = (
+                f" ({last_file_changelog_date})" if last_file_changelog_date else ""
+            )
+            if last_tag:
+                if last_file_changelog == last_tag:
+                    print(
+                        f"{Colors.WHITE}Último changelog (archivo): {last_file_changelog}{date_str} {Colors.GREEN}✓ sincronizado con tag{Colors.RESET}"
+                    )
+                else:
+                    # Comparar versiones para determinar si está adelantado o atrasado
+                    if parse_version:
+                        try:
+                            file_ver = parse_version(last_file_changelog)
+                            tag_ver = parse_version(last_tag)
+                            if file_ver > tag_ver:
+                                print(
+                                    f"{Colors.WHITE}Último changelog (archivo): {last_file_changelog}{date_str} {Colors.CYAN}→ registro adelantado{Colors.RESET}"
+                                )
+                            else:
+                                print(
+                                    f"{Colors.WHITE}Último changelog (archivo): {last_file_changelog}{date_str} {Colors.YELLOW}⚠ desactualizado{Colors.RESET}"
+                                )
+                        except Exception:
+                            print(
+                                f"{Colors.WHITE}Último changelog (archivo): {last_file_changelog}{date_str} {Colors.YELLOW}⚠ desactualizado{Colors.RESET}"
+                            )
+                    else:
+                        print(
+                            f"{Colors.WHITE}Último changelog (archivo): {last_file_changelog}{date_str} {Colors.YELLOW}⚠ desactualizado{Colors.RESET}"
+                        )
             else:
                 print(
-                    f"{Colors.WHITE}Último changelog (archivo): {last_file_changelog}{Colors.RESET}"
+                    f"{Colors.WHITE}Último changelog (archivo): {last_file_changelog}{date_str}{Colors.RESET}"
                 )
         else:
             print(
@@ -161,7 +203,9 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
         from ..core.logger import get_logger
 
         logger = get_logger()
-        logger.function_enter("action_auto_ai", menu="GESTIÓN DE CHANGELOGS", option="3")
+        logger.function_enter(
+            "action_auto_ai", menu="GESTIÓN DE CHANGELOGS", option="3"
+        )
         action_generate_all_changelogs_with_ai(repo, rebuild=False)
         logger.function_exit("action_auto_ai", return_value=False)
         return False
