@@ -76,8 +76,8 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
 
         last_tag = get_last_tag(repo)
 
-        # Contar total de tags en el repositorio
-        total_tags = len(list(repo.tags))
+        # Contar total de tags en el repositorio (excluyendo "Unreleased")
+        total_tags = len([t for t in repo.tags if t.name != "Unreleased"])
 
         # Contar commits sin etiquetar
         untagged_commits = get_untagged_commits(repo)
@@ -97,25 +97,44 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
                 all_versions_with_dates = re.findall(
                     r"##\s*\[([^\]]+)\]\s*-\s*(\d{4}-\d{2}-\d{2})", content
                 )
-                total_changelogs_in_file = len(all_versions_with_dates)
-                if all_versions_with_dates:
-                    last_file_changelog = all_versions_with_dates[0][0]
-                    last_file_changelog_date = all_versions_with_dates[0][1]
+                # Filtrar "Unreleased" ya que es una entrada temporal para commits pendientes
+                tagged_versions = [
+                    (ver, date)
+                    for ver, date in all_versions_with_dates
+                    if ver != "Unreleased"
+                ]
+                # Buscar entrada Unreleased (commits sin tag pendientes)
+                unreleased_versions = [
+                    (ver, date)
+                    for ver, date in all_versions_with_dates
+                    if ver == "Unreleased"
+                ]
+                has_unreleased_entry = len(unreleased_versions) > 0
+                unreleased_date = (
+                    unreleased_versions[0][1] if unreleased_versions else None
+                )
+                total_changelogs_in_file = len(tagged_versions)
+                if tagged_versions:
+                    last_file_changelog = tagged_versions[0][0]
+                    last_file_changelog_date = tagged_versions[0][1]
             except Exception:
                 pass
 
-        # Calcular changelogs pendientes (tags sin changelog + commits sin tag que necesitarán changelog)
+        # Calcular changelogs pendientes
+        # Si existe entrada "Unreleased", los commits sin tag ya están documentados
+        # y no cuentan como pendientes
         pending_tags = (
             total_tags - total_changelogs_in_file
             if total_tags > total_changelogs_in_file
             else 0
         )
-        total_pending = pending_tags + num_untagged
-        total_expected = (
-            total_tags + num_untagged
-        )  # Total esperado incluye tags actuales + futuros tags de commits pendientes
+        pending_untagged = 0 if has_unreleased_entry else num_untagged
+        total_pending = pending_tags + pending_untagged
+        # Total esperado: tags actuales + commits sin tag (solo si no hay Unreleased)
+        total_expected = total_tags + pending_untagged
 
-        # El changelog está completo solo si no hay tags pendientes Y no hay commits sin etiquetar
+        # El changelog está completo si no hay tags pendientes
+        # (los commits sin tag cubiertos por Unreleased no son "pendientes")
         is_complete = total_pending == 0
 
         # Mostrar changelogs registrados primero
@@ -176,6 +195,13 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
         else:
             print(
                 f"{Colors.WHITE}Último changelog (archivo): {Colors.YELLOW}(ninguno){Colors.RESET}"
+            )
+
+        # Mostrar entrada Unreleased si existe (commits sin tag pendientes)
+        if has_unreleased_entry:
+            unreleased_str = f" ({unreleased_date})" if unreleased_date else ""
+            print(
+                f"{Colors.WHITE}Changelog pendiente: Unreleased{unreleased_str} {Colors.CYAN}→ commits sin etiquetar{Colors.RESET}"
             )
 
         # Mostrar último tag

@@ -221,9 +221,7 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
             f"{Colors.YELLOW}Para generar changelogs completos, primero debe etiquetar estos commits.{Colors.RESET}"
         )
         print()
-        print(
-            f"{Colors.WHITE}Por favor, vaya a:{Colors.RESET}"
-        )
+        print(f"{Colors.WHITE}Por favor, vaya a:{Colors.RESET}")
         print(
             f"{Colors.CYAN}  Menú Principal → 2. Tags → 8. Generar tags con IA{Colors.RESET}"
         )
@@ -274,7 +272,7 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
         except Exception:
             pass
 
-    total_ranges: int = len(tags) + 1  # tags + (start→first_tag) + (last_tag→HEAD) - 1
+    total_ranges: int = len(tags)  # tags (start→first_tag + rangos entre tags)
 
     # Count how many are pending (not in changelog file and not in progress)
     pending_count: int = 0
@@ -317,9 +315,8 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
         to_tag: str = tags[i + 1].name
         ranges_to_process.append((from_tag, to_tag, from_tag, to_tag))
 
-    # Last range: last tag → HEAD
-    last_tag_name: str = tags[-1].name
-    ranges_to_process.append((last_tag_name, "HEAD", last_tag_name, None))
+    # Nota: No se genera changelog para commits sin tag (HEAD)
+    # El usuario debe etiquetar los commits primero en el menú de Tags
 
     # Process each range
     for display_from, display_to, git_from, git_to in ranges_to_process:
@@ -423,7 +420,9 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
             save_confirm = input(f"{Colors.WHITE}(s/n): {Colors.RESET}").strip().lower()
             logger.user_input("¿Desea guardar los changelogs?", save_confirm)
             if save_confirm == "s":
-                logger.info("Usuario eligió guardar - Llamando a save_changelog_from_progress")
+                logger.info(
+                    "Usuario eligió guardar - Llamando a save_changelog_from_progress"
+                )
                 print()
                 if save_changelog_from_progress(repo, changelog_path):
                     print()

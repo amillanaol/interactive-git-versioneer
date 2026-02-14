@@ -91,6 +91,12 @@ def cmd_tag(args: argparse.Namespace) -> int:
     Returns:
         int: An exit code (0 for success).
     """
+    # Check for TUI mode
+    if args.tui:
+        from .tui.app import run_tui
+
+        return run_tui()
+
     # Import here to avoid circular dependency and lazy loading
     from .tags import run_auto_tagger, run_interactive_tagger
 
@@ -245,6 +251,11 @@ Available models: https://console.groq.com/docs/models
         default="auto",
         help="Version type for --auto. 'auto' lets AI decide. (default: auto)",
     )
+    tag_parser.add_argument(
+        "--tui",
+        action="store_true",
+        help="Launch TUI interface (Lazygit-style). Overrides other options.",
+    )
     tag_parser.set_defaults(func=cmd_tag)
 
     # Command: clean-tags
@@ -285,6 +296,7 @@ Examples:
         args.push = False
         args.auto = False
         args.type = "auto"
+        args.tui = False
         return cmd_tag(args)
 
     # If it's a config command without a subcommand, show help

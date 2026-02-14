@@ -1,0 +1,229 @@
+/*
+ * Interactive Git Versioneer - TUI Styles
+ * Lazygit-inspired layout with semver semantic colors
+ */
+
+/* Import color variables - palette based on semver semantics */
+$background: #1e1e2e;
+$surface: #242436;
+$surface-elevated: #2a2a40;
+$border: #3a3a50;
+$border-focus: #6c5ce7;
+
+/* Semantic colors for git/versioning */
+$purple: #a855f7;      /* Tags/Versions - primary accent */
+$purple-light: #c084fc;
+$green: #22c55e;       /* Staged/Ready */
+$red: #ef4444;         /* Unstaged/Deleted */
+$orange: #f59e0b;      /* Modified/Staged */
+$yellow: #eab308;      /* Warnings */
+$blue: #3b82f6;        /* Info/Branches */
+$cyan: #06b6d4;        /* Commits */
+
+/* Text hierarchy */
+$text-primary: #e2e8f0;
+$text-secondary: #94a3b8;
+$text-muted: #64748b;
+
+/* Base screen */
+Screen {
+    background: $background;
+    color: $text-primary;
+}
+
+/* Main container */
+#main-container {
+    height: 100%;
+    padding: 1;
+}
+
+/* Status Panel - [1] - Shows version prediction */
+#status-panel {
+    height: 3;
+    background: $surface;
+    border: solid $border;
+    border-title-style: bold;
+    content-align: left middle;
+}
+
+#status-panel:focus {
+    border: solid $border-focus;
+}
+
+/* Middle row - Files and Branches */
+#middle-row {
+    height: 1fr;
+}
+
+#files-panel {
+    width: 50%;
+    background: $surface;
+    border: solid $border;
+    content-align: left top;
+}
+
+#branches-panel {
+    width: 50%;
+    background: $surface;
+    border: solid $border;
+    content-align: left top;
+}
+
+/* Commits Panel - [4] */
+#commits-panel {
+    height: 1fr;
+    background: $surface;
+    border: solid $border;
+    content-align: left top;
+}
+
+/* Bottom row - Log and Output */
+#bottom-row {
+    height: 25%;
+}
+
+#log-panel {
+    width: 40%;
+    background: $surface;
+    border: solid $border;
+    content-align: left top;
+}
+
+#output-panel {
+    width: 60%;
+    background: $surface;
+    border: solid $border;
+    content-align: left top;
+}
+
+/* Focus states */
+#status-panel:focus,
+#files-panel:focus,
+#branches-panel:focus,
+#commits-panel:focus,
+#log-panel:focus,
+#output-panel:focus {
+    border: solid $border-focus;
+}
+
+/* Panel headers */
+Static {
+    background: $surface;
+    color: $text-primary;
+}
+
+/* Scrollable areas */
+ListView, DataTable {
+    background: $surface;
+}
+
+/* Items */
+ListItem {
+    color: $text-primary;
+}
+
+ListItem:hover {
+    background: $surface-elevated;
+}
+
+ListItem:focus {
+    background: $purple-light;
+}
+
+/* Selected item indicator */
+.selected {
+    background: $purple;
+    color: $text-primary;
+}
+
+/* Version badge styles */
+.version-badge {
+    text-style: bold;
+    color: $purple;
+}
+
+.release-type {
+    text-style: italic;
+    color: $blue;
+}
+
+.release-major {
+    color: $red;
+}
+
+.release-minor {
+    color: $green;
+}
+
+.release-patch {
+    color: $orange;
+}
+
+/* Git status indicators */
+.status-staged {
+    color: $green;
+}
+
+.status-unstaged {
+    color: $red;
+}
+
+.status-modified {
+    color: $orange;
+}
+
+.status-untracked {
+    color: $text-muted;
+}
+
+/* Conventional commit type icons */
+.commit-feat {
+    color: $green;
+}
+
+.commit-fix {
+    color: $red;
+}
+
+.commit-docs {
+    color: $cyan;
+}
+
+.commit-style {
+    color: $yellow;
+}
+
+.commit-refactor {
+    color: $purple;
+}
+
+.commit-test {
+    color: $blue;
+}
+
+/* Footer */
+#footer {
+    background: $surface-elevated;
+    color: $text-secondary;
+    dock: bottom;
+    height: 1;
+}
+
+/* Header */
+#header {
+    background: $surface-elevated;
+    color: $purple;
+    dock: top;
+    height: 1;
+}
+
+/* Borders for panel titles */
+#status-panel > .--panel-title,
+#files-panel > .--panel-title,
+#branches-panel > .--panel-title,
+#commits-panel > .--panel-title,
+#log-panel > .--panel-title,
+#output-panel > .--panel-title {
+    text-style: bold;
+    color: $text-primary;
+}
