@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-14 15:12*
+*Automatically generated with AI on 2026-02-14 15:21*
+
+## [v2.0.1] - 2026-02-14
+
+Actualizar CHANGELOG
+
+## [v2.0.0] - 2026-02-14
+
+Actualiza versión
 
 ## [v1.0.2] - 2026-02-14
 
