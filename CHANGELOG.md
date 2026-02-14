@@ -2,7 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-14 14:46*
+*Automatically generated with AI on 2026-02-14 15:12*
+
+## [v1.0.2] - 2026-02-14
+
+Agregar extracción de changelogs desde mensajes de etiquetas
+
+## [v1.0.1] - 2026-02-14
+
+Actualiza CHANGELOG
+
+## [v1.0.0] - 2026-02-14
+
+Actualiza versión a 0.28.11
 
 ## [v0.28.10] - 2026-02-14
 
