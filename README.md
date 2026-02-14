@@ -2,11 +2,10 @@
 
 Interfaz CLI que combina menús interactivos con modelos de IA para automatizar el versionado semántico, generación de changelogs y releases en Git.
 
-## Demostración
-
-Demostración del menú interactivo: navegación por menús, selección de commits, generación automática de mensajes con IA y aplicación de tags con versionado semántico.
-
-![](https://raw.githubusercontent.com/amillanaol/interactive-git-versioneer/refs/heads/main/docs/_assets/igv-quick_demo.gif)
+| | | |
+| :---: | :---: | :---: |
+| ![PyPI](https://img.shields.io/pypi/v/interactive-git-versioneer.svg?label=Version) | ![License](https://img.shields.io/badge/license-MIT-blue?label=License) | ![Python](https://img.shields.io/badge/python-3.7+-blue?label=Python) |
+| ![Downloads](https://img.shields.io/pypi/dm/interactive-git-versioneer?label=Downloads) | ![Build](https://github.com/amillanaol/interactive-git-versioneer/actions/workflows/auto-tag.yml/badge.svg?label=Build) | ![GitHub stars](https://img.shields.io/github/stars/amillanaol/interactive-git-versioneer?label=Stars) |
 
 ## Inicio Rápido
 
@@ -18,6 +17,12 @@ Demostración del menú interactivo: navegación por menús, selección de commi
 | Configurar IA | `igv config set OPENAI.key <key>` |
 
 [Guía de inicio rápido](docs/usuario/guia_inicio_rapido.md) | [Comandos CLI](docs/referencia/comandos.md)
+
+## Demostración
+
+Demostración del menú interactivo: navegación por menús, selección de commits, generación automática de mensajes con IA y aplicación de tags con versionado semántico.
+
+![](https://raw.githubusercontent.com/amillanaol/interactive-git-versioneer/refs/heads/main/docs/_assets/igv-quick_demo.gif)
 
 ## Instalación
 
@@ -93,21 +98,8 @@ Detalles en [docs/modules/](docs/modules/).
 
 ---
 
-| Campo | Valor |
-| :--- | :--- |
-| **Mantenedor** | amillanaol(https://orcid.org/0009-0003-1768-7048) |
-| **Estado** | Final |
-| **Última Actualización** | 2026-02-14 |
+## Support
 
-## 💖 Support My Work
-
-**[ES] Español:**  
-¡considera invitarme un café para que pueda seguir creando y compartiendo más! ☕
-
-**[EN] English:**  
-Please consider buying me a coffee so I can keep creating and sharing more! ☕
-
-**[BR] Português:**  
-Considere me pagar um café para que eu possa continuar criando e compartilhando mais! ☕
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/amillanaol)
+| | |
+| :---: | :---: |
+| [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&label=Support)](https://buymeacoffee.com/amillanaol) | [![GitHub Stars](https://img.shields.io/badge/GitHub-Stars-181717?style=for-the-badge&logo=github&label=Star)](https://github.com/amillanaol/interactive-git-versioneer/stargazers) |
