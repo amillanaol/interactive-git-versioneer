@@ -105,23 +105,24 @@ def is_valid_semver(version_str: str) -> bool:
 
 
 def get_suggested_version(repo: "git.Repo", current_version: str) -> Optional[str]:
-    """Sugiere la siguiente versión basada en el CHANGELOG y tags del repositorio.
+    """Sugiere la versión para sincronizar pyproject.toml con el CHANGELOG.
+
+    pyproject.toml debe estar sincronizado con el CHANGELOG, NO adelantado.
 
     Orden de prioridad (fuente de verdad):
-    1. Última versión en CHANGELOG.md (versiones documentadas)
+    1. Última versión en CHANGELOG.md (versión a sincronizar)
     2. Último tag de Git (si no hay changelog)
     3. 0.0.1 (si no hay ni changelog ni tags)
     """
     try:
-        from .git_ops import get_last_tag, parse_version
+        from .git_ops import get_last_tag
 
         # 1. Intentar obtener última versión del CHANGELOG (fuente de verdad principal)
         last_changelog_ver = get_last_changelog_version(repo)
 
         if last_changelog_ver:
-            # Hay versiones en el changelog, sugerir siguiente patch
-            major, minor, patch = parse_version(last_changelog_ver)
-            return f"{major}.{minor}.{patch + 1}"
+            # Sugerir la MISMA versión del changelog (sincronizar, no adelantar)
+            return last_changelog_ver
 
         # 2. Si no hay changelog, usar el último tag
         last_tag = get_last_tag(repo)
@@ -130,11 +131,8 @@ def get_suggested_version(repo: "git.Repo", current_version: str) -> Optional[st
             # Sin tags ni changelog, sugerir 0.0.1
             return "0.0.1"
 
-        # Extraer número de versión del tag (sin 'v')
-        tag_version = last_tag.lstrip("v")
-        major, minor, patch = parse_version(tag_version)
-
-        return f"{major}.{minor}.{patch + 1}"
+        # Sugerir la versión del último tag (sincronizar)
+        return last_tag.lstrip("v")
     except Exception:
         pass
 
@@ -176,7 +174,11 @@ def action_update_project_version(repo: "git.Repo") -> bool:
 
     # Mostrar último changelog
     if last_changelog_ver:
-        print(f"{Colors.WHITE}  • Último changelog: {last_changelog_ver}{Colors.RESET}")
+        changelog_versions = get_changelog_versions(repo)
+        num_versions = len(changelog_versions)
+        print(
+            f"{Colors.WHITE}  • Último changelog: {last_changelog_ver} ({num_versions} versiones registradas){Colors.RESET}"
+        )
     else:
         print(f"{Colors.WHITE}  • Último changelog: {Colors.YELLOW}(ninguno){Colors.RESET}")
 
@@ -196,31 +198,48 @@ def action_update_project_version(repo: "git.Repo") -> bool:
     if last_changelog_ver:
         if version_tuple(current_version) > version_tuple(last_changelog_ver):
             print(
-                f"{Colors.YELLOW}⚠ pyproject.toml ({current_version}) está adelantado del changelog ({last_changelog_ver}){Colors.RESET}"
+                f"{Colors.RED}⚠ DESINCRONIZACIÓN: pyproject.toml ({current_version}) adelantado del CHANGELOG ({last_changelog_ver}){Colors.RESET}"
             )
             print(
-                f"{Colors.WHITE}  → Si {current_version} ya está implementado, genera su changelog.{Colors.RESET}"
+                f"{Colors.WHITE}  → ESTO NO DEBE PASAR. El CHANGELOG es la fuente de verdad.{Colors.RESET}"
+            )
+            print(
+                f"{Colors.YELLOW}  → Opciones:{Colors.RESET}"
+            )
+            print(
+                f"{Colors.WHITE}     a) Retroceder pyproject.toml a {last_changelog_ver}{Colors.RESET}"
+            )
+            print(
+                f"{Colors.WHITE}     b) Etiquetar y generar changelog para {current_version}{Colors.RESET}"
             )
             has_issues = True
         elif version_tuple(current_version) < version_tuple(last_changelog_ver):
             print(
-                f"{Colors.RED}⚠ pyproject.toml ({current_version}) está atrasado del changelog ({last_changelog_ver}){Colors.RESET}"
+                f"{Colors.YELLOW}⚠ pyproject.toml ({current_version}) está atrasado del CHANGELOG ({last_changelog_ver}){Colors.RESET}"
             )
             print(
-                f"{Colors.WHITE}  → Actualiza pyproject.toml a la versión del changelog.{Colors.RESET}"
+                f"{Colors.WHITE}  → Actualiza pyproject.toml a {last_changelog_ver} (versión sugerida).{Colors.RESET}"
             )
             has_issues = True
+        else:
+            # Versiones iguales entre pyproject y changelog
+            print(f"{Colors.GREEN}✓ pyproject.toml sincronizado con CHANGELOG.{Colors.RESET}")
 
     # Comparar tag con changelog
     if last_tag_version and last_changelog_ver:
-        if version_tuple(last_tag_version) != version_tuple(last_changelog_ver):
+        if version_tuple(last_tag_version) > version_tuple(last_changelog_ver):
             print(
-                f"{Colors.YELLOW}⚠ Desincronización entre tag ({last_tag_version}) y changelog ({last_changelog_ver}){Colors.RESET}"
+                f"{Colors.YELLOW}⚠ Tag ({last_tag_version}) adelantado del CHANGELOG ({last_changelog_ver}){Colors.RESET}"
+            )
+            print(
+                f"{Colors.WHITE}  → Genera el changelog para el tag {last_tag}.{Colors.RESET}"
             )
             has_issues = True
-
-    if not has_issues:
-        print(f"{Colors.GREEN}✓ Todo sincronizado correctamente.{Colors.RESET}")
+        elif version_tuple(last_tag_version) < version_tuple(last_changelog_ver):
+            print(
+                f"{Colors.YELLOW}⚠ CHANGELOG ({last_changelog_ver}) adelantado del último tag ({last_tag_version}){Colors.RESET}"
+            )
+            has_issues = True
 
     # Obtener versión sugerida
     suggested_version = get_suggested_version(repo, current_version)
@@ -229,6 +248,13 @@ def action_update_project_version(repo: "git.Repo") -> bool:
             f"{Colors.WHITE}Versión sugerida: {Colors.GREEN}{suggested_version}{Colors.RESET}"
         )
 
+    print()
+
+    # Advertencia importante sobre el flujo correcto
+    print(f"{Colors.CYAN}FLUJO RECOMENDADO:{Colors.RESET}")
+    print(f"{Colors.WHITE}  1. Etiquetar commits (menú Tags){Colors.RESET}")
+    print(f"{Colors.WHITE}  2. Generar changelog (menú Releases → Changelogs){Colors.RESET}")
+    print(f"{Colors.WHITE}  3. Actualizar pyproject.toml (esta opción){Colors.RESET}")
     print()
 
     while True:
@@ -263,6 +289,66 @@ def action_update_project_version(repo: "git.Repo") -> bool:
                 f"{Colors.YELLOW}La nueva versión es igual a la actual. Por favor, introduce una versión diferente.{Colors.RESET}"
             )
             continue
+
+        # VALIDACIÓN CRÍTICA: Verificar que la versión exista en el CHANGELOG
+        if last_changelog_ver:
+            new_version_stripped = new_version.lstrip("v")
+            changelog_versions = get_changelog_versions(repo)
+            # Normalizar versiones del changelog (quitar 'v' si existe)
+            changelog_versions_normalized = [v.lstrip("v") for v in changelog_versions]
+
+            # Verificar si la nueva versión está en el changelog
+            version_in_changelog = new_version_stripped in changelog_versions_normalized
+
+            # Verificar si la nueva versión está adelantada del changelog
+            if version_tuple(new_version_stripped) > version_tuple(last_changelog_ver):
+                print()
+                print(f"{Colors.RED}⚠️  ERROR: La versión {new_version} NO está en el CHANGELOG{Colors.RESET}")
+                print(f"{Colors.WHITE}   Última versión en CHANGELOG: {last_changelog_ver}{Colors.RESET}")
+                print()
+                print(f"{Colors.YELLOW}   pyproject.toml NO debe estar adelantado del CHANGELOG.{Colors.RESET}")
+                print()
+                print(f"{Colors.WHITE}   Sigue el flujo correcto:{Colors.RESET}")
+                print(f"{Colors.WHITE}   1. Etiqueta commits: igv → Menú Tags → Etiquetar commits{Colors.RESET}")
+                print(f"{Colors.WHITE}   2. Genera changelog: igv → Menú Releases → Changelogs → Continuar changelog{Colors.RESET}")
+                print(f"{Colors.WHITE}   3. Actualiza pyproject.toml: igv → Menú Releases → Actualizar versión{Colors.RESET}")
+                print()
+
+                try:
+                    override = input(
+                        f"{Colors.YELLOW}¿Actualizar de todos modos? (NO recomendado) (s/n): {Colors.RESET}"
+                    ).strip().lower()
+                except KeyboardInterrupt:
+                    print()
+                    print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
+                    wait_for_enter()
+                    return False
+
+                if override != "s":
+                    print(f"{Colors.GREEN}Operación cancelada. Sigue el flujo recomendado.{Colors.RESET}")
+                    wait_for_enter()
+                    return False
+            elif not version_in_changelog and new_version_stripped != last_changelog_ver:
+                # La versión no está en el changelog pero no está adelantada (versión antigua)
+                print()
+                print(f"{Colors.YELLOW}⚠️  Advertencia: La versión {new_version} no está en el CHANGELOG{Colors.RESET}")
+                print(f"{Colors.WHITE}   ¿Estás seguro de retroceder a una versión no documentada?{Colors.RESET}")
+                print()
+
+                try:
+                    confirm = input(
+                        f"{Colors.WHITE}¿Continuar? (s/n): {Colors.RESET}"
+                    ).strip().lower()
+                except KeyboardInterrupt:
+                    print()
+                    print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
+                    wait_for_enter()
+                    return False
+
+                if confirm != "s":
+                    print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
+                    wait_for_enter()
+                    return False
 
         break
 
