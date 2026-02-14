@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-14 16:09*
+*Automatically generated with AI on 2026-02-14 16:29*
+
+## [v3.1.5] - 2026-02-14
+
+Actualiza versión a 3.1.5
 
 ## [v3.1.4] - 2026-02-14
 
