@@ -2,7 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-14 15:21*
+*Automatically generated with AI on 2026-02-14 16:09*
+
+## [v3.1.4] - 2026-02-14
+
+Agregar documentación de resolución de errores
+
+## [v3.1.3] - 2026-02-14
+
+Agregar documentación modelos de datos
+
+## [v3.1.2] - 2026-02-14
+
+Agregar documentación para comandos y configuración de IA
+
+## [v3.1.1] - 2026-02-14
+
+Actualiza documentación
+
+## [v3.1.0] - 2026-02-14
+
+Agregar función para limpiar tags duplicados
+
+## [v3.0.0] - 2026-02-14
+
+Actualiza versión a v2.0.1
 
 ## [v2.0.1] - 2026-02-14
 
