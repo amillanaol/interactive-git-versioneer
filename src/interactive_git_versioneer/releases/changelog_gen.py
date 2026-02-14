@@ -222,6 +222,90 @@ def generate_changelog(
         return f"Error generating changelog: {e}"
 
 
+def generate_changelog_from_tag_message(repo: Repo, tag_name: str) -> str:
+    """Generates a changelog entry from a Git tag's message.
+
+    This is more efficient than using AI to summarize commits, as tag messages
+    already contain a human-readable description of changes.
+
+    Args:
+        repo: The Git repository object.
+        tag_name: The tag name to extract the message from.
+
+    Returns:
+        str: The formatted changelog entry based on the tag message.
+    """
+    try:
+        # Get the tag object
+        tag = repo.tags[tag_name]
+
+        # Get the tag message (annotation)
+        # Annotated tags have a message attribute
+        if hasattr(tag.tag, "message"):
+            message = tag.tag.message.strip()
+        else:
+            # Lightweight tags don't have annotations, use commit message
+            message = tag.commit.message.strip()
+
+        # Clean up the message:
+        # - Remove the tag name if it appears at the start
+        # - Skip "Tagger:" metadata lines
+        # - Split into lines
+        lines = message.split("\n")
+        cleaned_lines = []
+
+        for line in lines:
+            line = line.strip()
+            # Skip empty lines, tag name, and metadata
+            if (
+                not line
+                or line == tag_name
+                or line.startswith("tag ")
+                or line.startswith("Tagger:")
+                or line.startswith("Date:")
+            ):
+                continue
+            cleaned_lines.append(line)
+
+        if not cleaned_lines:
+            return "No description available."
+
+        # Format as changelog entry
+        # If there's only one line, use it as-is
+        if len(cleaned_lines) == 1:
+            return cleaned_lines[0]
+
+        # If there are multiple lines, format them
+        result_lines = []
+        for i, line in enumerate(cleaned_lines):
+            # If line starts with a conventional commit prefix, format as bullet
+            if any(
+                line.startswith(prefix)
+                for prefix in [
+                    "feat:",
+                    "fix:",
+                    "docs:",
+                    "test:",
+                    "refactor:",
+                    "chore:",
+                    "style:",
+                    "perf:",
+                ]
+            ):
+                result_lines.append(f"- {line}")
+            elif i == 0:
+                # First line is the main description
+                result_lines.append(line)
+            else:
+                # Subsequent lines are additional details
+                result_lines.append(f"- {line}")
+
+        return "\n".join(result_lines) if result_lines else cleaned_lines[0]
+
+    except Exception as e:
+        return f"Error extracting tag message: {e}"
+
+
 def summarize_changelog_with_ai(raw_changelog_text: str, locale: str = "es") -> str:
     """Summarizes a changelog using the AI API.
 

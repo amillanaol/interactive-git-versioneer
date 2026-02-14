@@ -21,7 +21,11 @@ from ..core.ui import (
     wait_for_enter,
     wait_for_enter_or_skip,
 )
-from .changelog_gen import generate_changelog, summarize_changelog_with_ai
+from .changelog_gen import (
+    generate_changelog,
+    generate_changelog_from_tag_message,
+    summarize_changelog_with_ai,
+)
 from .changelog_progress import (
     _clear_changelog_progress,
     _load_changelog_progress,
@@ -217,9 +221,10 @@ def _validate_and_clean_progress(
     return cleaned_progress
 
 
-def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) -> None:
-    """Generates and displays all changelogs between consecutive tags, from the beginning
-    to the first tag, and from the last tag to HEAD, using AI to summarize.
+def action_generate_all_changelogs_with_ai(
+    repo: Repo, rebuild: bool = False, use_tag_messages: bool = True
+) -> None:
+    """Generates and displays all changelogs between consecutive tags.
 
     Continues from the last generated changelog unless rebuild=True.
     Ctrl+X skips the rest of pending changelogs.
@@ -227,6 +232,8 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
     Args:
         repo: The Git repository object.
         rebuild: If True, regenerates all changelogs from scratch.
+        use_tag_messages: If True (default), extracts changelogs from tag messages.
+                          If False, uses AI to summarize commit diffs (less efficient).
     """
     from ..core.logger import get_logger
 
@@ -235,16 +242,19 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
 
     clear_screen()
     if rebuild:
-        print_header("REBUILD CHANGELOGS (with AI)")
+        print_header("REBUILD CHANGELOGS (from tags)")
         _clear_changelog_progress(repo)
     else:
-        print_header("CONTINUE CHANGELOGS (with AI)")
+        print_header("CONTINUE CHANGELOGS (from tags)")
 
     from ..config import get_config_value
     from ..tags.ai import auto_generate_all_with_ai
 
-    # Check AI configuration
-    if not get_config_value("OPENAI.key") or not get_config_value("OPENAI.baseURL"):
+    # Check AI configuration (only needed if using AI method for commits without tags)
+    if (
+        not use_tag_messages
+        and (not get_config_value("OPENAI.key") or not get_config_value("OPENAI.baseURL"))
+    ):
         print(f"{Colors.RED}Error: Incomplete AI configuration.{Colors.RESET}")
         print(f"{Colors.YELLOW}Configure with:{Colors.RESET}")
         print(f"  igv config set OPENAI.key <your-api-key>")
@@ -421,44 +431,62 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
             continue
 
         # Generate changelog
-        raw_changelog: str = generate_changelog(repo, from_tag=git_from, to_tag=git_to)
-
-        if raw_changelog:
+        if use_tag_messages and display_to != "HEAD" and display_to != "start":
+            # NUEVO MÉTODO EFICIENTE: Extraer del mensaje del tag (sin IA)
             print(f"{Colors.CYAN}=== CHANGELOG: {range_key} ==={Colors.RESET}")
-
-            print(f"{Colors.YELLOW}Generating summary with AI...{Colors.RESET}")
-            ai_changelog: str = summarize_changelog_with_ai(raw_changelog)
-            print(ai_changelog)
+            print(f"{Colors.YELLOW}Extracting from tag message...{Colors.RESET}")
+            changelog_content: str = generate_changelog_from_tag_message(repo, display_to)
+            print(changelog_content)
             print("\n" + "=" * 50 + "\n")
 
             # Save progress
-            progress[range_key] = ai_changelog
+            progress[range_key] = changelog_content
             _save_changelog_progress(repo, progress)
             generated_count += 1
-
-            # Wait for user input (unless in auto mode)
-            if not auto_continue:
-                action: Optional[str] = wait_for_enter_or_skip()
-                if action == "skip":
-                    print(
-                        f"{Colors.YELLOW}Skipping rest of changelogs...{Colors.RESET}"
-                    )
-                    user_skipped = True
-                elif action == "all":
-                    print(
-                        f"{Colors.GREEN}Processing all remaining changelogs automatically...{Colors.RESET}"
-                    )
-                    auto_continue = True
-                elif action == "quit":
-                    print(f"{Colors.YELLOW}Exiting program...{Colors.RESET}")
-                    sys.exit(0)
-                elif action == "cancel":
-                    print(f"{Colors.YELLOW}Canceled by user.{Colors.RESET}")
-                    break
         else:
-            print(f"{Colors.YELLOW}⏭️  {range_key}: No commits - Skipped{Colors.RESET}")
-            progress[range_key] = "[No commits]"
-            _save_changelog_progress(repo, progress)
+            # MÉTODO ANTIGUO: Generar con IA (menos eficiente, pero necesario para HEAD)
+            raw_changelog: str = generate_changelog(
+                repo, from_tag=git_from, to_tag=git_to
+            )
+
+            if raw_changelog:
+                print(f"{Colors.CYAN}=== CHANGELOG: {range_key} ==={Colors.RESET}")
+
+                print(f"{Colors.YELLOW}Generating summary with AI...{Colors.RESET}")
+                ai_changelog: str = summarize_changelog_with_ai(raw_changelog)
+                print(ai_changelog)
+                print("\n" + "=" * 50 + "\n")
+
+                # Save progress
+                progress[range_key] = ai_changelog
+                _save_changelog_progress(repo, progress)
+                generated_count += 1
+            else:
+                print(
+                    f"{Colors.YELLOW}⏭️  {range_key}: No commits - Skipped{Colors.RESET}"
+                )
+                progress[range_key] = "[No commits]"
+                _save_changelog_progress(repo, progress)
+
+        # Wait for user input (unless in auto mode)
+        if not auto_continue:
+            action: Optional[str] = wait_for_enter_or_skip()
+            if action == "skip":
+                print(
+                    f"{Colors.YELLOW}Skipping rest of changelogs...{Colors.RESET}"
+                )
+                user_skipped = True
+            elif action == "all":
+                print(
+                    f"{Colors.GREEN}Processing all remaining changelogs automatically...{Colors.RESET}"
+                )
+                auto_continue = True
+            elif action == "quit":
+                print(f"{Colors.YELLOW}Exiting program...{Colors.RESET}")
+                sys.exit(0)
+            elif action == "cancel":
+                print(f"{Colors.YELLOW}Canceled by user.{Colors.RESET}")
+                break
 
     # Final summary
     print()

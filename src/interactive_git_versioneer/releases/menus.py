@@ -234,7 +234,8 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
         logger.function_enter(
             "action_auto_ai", menu="GESTIÓN DE CHANGELOGS", option="3"
         )
-        action_generate_all_changelogs_with_ai(repo, rebuild=False)
+        # Usar método basado en tags (más eficiente, sin IA)
+        action_generate_all_changelogs_with_ai(repo, rebuild=False, use_tag_messages=True)
         logger.function_exit("action_auto_ai", return_value=False)
         return False
 
@@ -249,7 +250,7 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
             f"{Colors.RED}⚠️  Esta opción eliminará el archivo CHANGELOG.md actual{Colors.RESET}"
         )
         print(
-            f"{Colors.RED}    y regenerará todos los changelogs desde cero con IA.{Colors.RESET}"
+            f"{Colors.RED}    y regenerará todos los changelogs extrayéndolos desde los mensajes de tags.{Colors.RESET}"
         )
         print()
         try:
@@ -277,8 +278,8 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
                 except Exception as e:
                     print(f"{Colors.RED}Error al eliminar archivo: {e}{Colors.RESET}")
 
-            # Generar todos los changelogs con IA
-            action_generate_all_changelogs_with_ai(repo, rebuild=True)
+            # Generar todos los changelogs (basados en tags)
+            action_generate_all_changelogs_with_ai(repo, rebuild=True, use_tag_messages=True)
 
             # Guardar los changelogs generados en el archivo CHANGELOG.md
             print()
@@ -306,7 +307,7 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
                 f"{Colors.YELLOW}No hay changelogs generados en progreso para guardar.{Colors.RESET}"
             )
             print(
-                f"{Colors.WHITE}Primero genera changelogs con '3. Continuar changelog (automático con IA)' o '6. Reconstruir todos los changelogs (con IA)'.{Colors.RESET}"
+                f"{Colors.WHITE}Primero genera changelogs con '3. Continuar changelog (desde tags)' o '6. Reconstruir todos los changelogs (desde tags)'.{Colors.RESET}"
             )
             wait_for_enter()
             return False
@@ -377,7 +378,7 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
             print(f"{Colors.RED}✗ No se pudieron guardar los changelogs.{Colors.RESET}")
             print()
             print(
-                f"{Colors.WHITE}Asegúrate de haber generado changelogs primero usando la opción '3. Continuar changelog (automático con IA)'.{Colors.RESET}"
+                f"{Colors.WHITE}Asegúrate de haber generado changelogs primero usando la opción '3. Continuar changelog (desde tags)'.{Colors.RESET}"
             )
         wait_for_enter()
         return False
@@ -389,11 +390,11 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
     menu.set_status_callback(show_changelog_status)
     menu.add_item("1", "Previsualizar changelog", action_preview)
     menu.add_item("2", "Continuar changelog (manualmente)", action_manual)
-    menu.add_item("3", "Continuar changelog (automático con IA)", action_auto_ai)
+    menu.add_item("3", "Continuar changelog (desde tags)", action_auto_ai)
     menu.add_item("4", "Modificar changelogs", action_edit)
     menu.add_item("5", "Guardar en archivo CHANGELOG.md", action_save_to_file)
     menu.add_item(
-        "6", "Reconstruir todos los changelogs (con IA)", action_rebuild_with_ai
+        "6", "Reconstruir todos los changelogs (desde tags)", action_rebuild_with_ai
     )
     menu.add_item("0", "Volver", action_back)
 
