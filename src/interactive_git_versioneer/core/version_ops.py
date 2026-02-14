@@ -5,6 +5,15 @@ from typing import Optional
 from .ui import Colors, clear_screen, wait_for_enter
 
 
+def version_tuple(v: str) -> tuple:
+    """Convierte string de versión a tupla de integers para comparación."""
+    try:
+        parts = v.split(".")
+        return tuple(int(p) for p in parts[:3])
+    except:
+        return (0, 0, 0)
+
+
 def get_current_version(repo_root: Path) -> Optional[str]:
     """Reads the current version from pyproject.toml."""
     pyproject_path = repo_root / "pyproject.toml"
@@ -53,19 +62,39 @@ def is_valid_semver(version_str: str) -> bool:
 
 
 def get_suggested_version(repo: "git.Repo", current_version: str) -> Optional[str]:
-    """Sugiere la siguiente versión basada en el último tag del repositorio."""
+    """Sugiere la siguiente versión basada en el último tag del repositorio.
+
+    Si la versión actual del pyproject.toml es mayor que el último tag,
+    usa esa como base para calcular la sugerencia.
+    """
     try:
         from .git_ops import get_last_tag, get_next_version
 
         last_tag = get_last_tag(repo)
+
+        # Determinar versión base: usar la mayor entre el tag y pyproject.toml
+        base_version = current_version
         if last_tag:
-            # El último tag es la base para la siguiente versión
-            # Usamos el último tag como referencia y sugerimos patch bump
-            suggested = get_next_version(repo, "patch")
-            # Remover la 'v' inicial si existe
-            if suggested and suggested.startswith("v"):
-                suggested = suggested[1:]
-            return suggested
+            # Extraer número de versión del tag (sin 'v')
+            tag_version = last_tag.lstrip("v")
+
+            if version_tuple(base_version) > version_tuple(tag_version):
+                # pyproject tiene versión más alta, usarla como base y calcular siguiente
+                # sobre esa versión
+                try:
+                    parts = base_version.split(".")
+                    if len(parts) >= 3:
+                        parts[2] = str(int(parts[2]) + 1)
+                        return ".".join(parts[:3])
+                except:
+                    pass
+
+        # Caso normal: usar el tag como base
+        suggested = get_next_version(repo, "patch")
+        if suggested and suggested.startswith("v"):
+            suggested = suggested[1:]
+
+        return suggested
     except Exception:
         pass
 
@@ -83,9 +112,15 @@ def action_update_project_version(repo: "git.Repo") -> bool:
     repo_root = Path(repo.working_dir)
     current_version = get_current_version(repo_root)
 
+    # Obtener último tag para comparación
+    from .git_ops import get_last_tag
+
+    last_tag = get_last_tag(repo)
+    last_tag_version = last_tag.lstrip("v") if last_tag else None
+
     if current_version:
         print(
-            f"{Colors.WHITE}Versión actual: {Colors.YELLOW}{current_version}{Colors.RESET}"
+            f"{Colors.WHITE}Versión actual en pyproject.toml: {Colors.YELLOW}{current_version}{Colors.RESET}"
         )
     else:
         print(
@@ -94,11 +129,29 @@ def action_update_project_version(repo: "git.Repo") -> bool:
         wait_for_enter()
         return False
 
-    # Obtener versión sugerida del último tag
+    # Advertir si hay inconsistencia entre pyproject y tags
+    if last_tag_version:
+        if version_tuple(current_version) > version_tuple(last_tag_version):
+            print(
+                f"{Colors.RED}⚠ Advertencia: pyproject.toml ({current_version}) está por "
+                f"delante del último tag ({last_tag}).{Colors.RESET}"
+            )
+            print(
+                f"{Colors.WHITE}  El tag {last_tag} existe pero pyproject tiene versión mayor.{Colors.RESET}"
+            )
+        elif version_tuple(current_version) < version_tuple(last_tag_version):
+            print(
+                f"{Colors.RED}⚠ Advertencia: pyproject.toml ({current_version}) está por "
+                f"detrás del último tag ({last_tag}).{Colors.RESET}"
+            )
+        else:
+            print(f"{Colors.WHITE}Último tag: {Colors.GREEN}{last_tag}{Colors.RESET}")
+
+    # Obtener versión sugerida
     suggested_version = get_suggested_version(repo, current_version)
     if suggested_version:
         print(
-            f"{Colors.WHITE}Versión sugerida (último tag): {Colors.GREEN}{suggested_version}{Colors.RESET}"
+            f"{Colors.WHITE}Versión sugerida: {Colors.GREEN}{suggested_version}{Colors.RESET}"
         )
 
     print()
