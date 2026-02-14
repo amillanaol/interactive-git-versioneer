@@ -27,8 +27,46 @@ Demostración del menú interactivo: navegación por menús, selección de commi
 | Desde Git | `pip install git+https://github.com/amillanaol/interactive-git-versioneer.git` | Git |
 | Desarrollo | `git clone` + `pip install -e .` | Python >= 3.7, Git |
 
-**Dependencias:** `GitPython>=3.1.0`, `openai>=1.0.0`  
+**Dependencias:** `GitPython>=3.1.0`, `openai>=1.0.0`
 **Opcional:** `gh` (GitHub CLI) para releases.
+
+## Desarrollo y Build
+
+### Comandos Make Disponibles
+
+El proyecto incluye un `Makefile` para automatizar tareas comunes de desarrollo:
+
+| Comando | Descripción |
+| :--- | :--- |
+| `make help` | Muestra todos los comandos disponibles |
+| `make clean` | Limpia archivos de build (dist/, build/, *.egg-info) |
+| `make build` | Limpia y construye el paquete |
+| `make upload-test` | Sube el paquete a TestPyPI |
+| `make upload` | Sube el paquete a PyPI (producción) |
+| `make install` | Instala localmente en modo editable |
+| `make dev` | Instala dependencias de desarrollo |
+| `make test` | Ejecuta tests con pytest |
+
+### Flujo de Publicación
+
+**Para TestPyPI (testing):**
+```bash
+cd interactive-git-versioneer
+make build        # Limpia y construye con la versión en pyproject.toml
+make upload-test  # Sube a TestPyPI
+```
+
+**Para PyPI (producción):**
+```bash
+# 1. Actualizar versión en pyproject.toml
+# 2. Crear tag git: git tag v3.1.6 && git push --tags
+make upload       # Construye y sube a PyPI (con confirmación)
+```
+
+**Notas importantes:**
+- PyPI/TestPyPI **NO permiten reutilizar versiones**. Si `v3.1.6` ya existe, debes incrementar a `v3.1.7`
+- `make build` automáticamente limpia archivos viejos antes de construir
+- Configura tokens en `~/.pypirc` ([ver configuración](docs/operaciones/publicacion_pypi.md))
 
 ## Documentación
 
