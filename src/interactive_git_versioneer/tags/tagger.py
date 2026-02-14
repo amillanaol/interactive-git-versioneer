@@ -216,12 +216,13 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
     """Muestra el submenú para la gestión de tags."""
 
     def show_tags_status():
-        """Muestra el estado actual de tags."""
+        """Muestra el estado actual de tags de forma concisa y amigable."""
         last_tag = get_last_tag(repo)
         local_count = len(list(repo.tags))
-        print(f"{Colors.WHITE}Tags locales: {local_count}{Colors.RESET}")
 
         # Contar tags remotos
+        remote_count = 0
+        sync_status = ""
         try:
             remote = repo.remotes.origin
             ls_remote = repo.git.ls_remote("--tags", remote.name)
@@ -231,26 +232,41 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
                     parts = line.split()
                     if len(parts) >= 2 and parts[1].startswith("refs/tags/"):
                         remote_tags.append(parts[1].replace("refs/tags/", ""))
-            print(f"{Colors.WHITE}Tags remotos: {len(remote_tags)}{Colors.RESET}")
+            remote_count = len(remote_tags)
+
+            # Indicador de sincronización
+            if local_count == remote_count:
+                sync_status = f"{Colors.GREEN}✓ sincronizado{Colors.RESET}"
+            elif local_count > remote_count:
+                sync_status = f"{Colors.YELLOW}↑ {local_count - remote_count} local(es) sin subir{Colors.RESET}"
+            else:
+                sync_status = f"{Colors.CYAN}↓ {remote_count - local_count} en remoto{Colors.RESET}"
         except Exception:
-            print(
-                f"{Colors.WHITE}Tags remotos: {Colors.YELLOW}(no disponible){Colors.RESET}"
-            )
+            sync_status = f"{Colors.YELLOW}⚠ remoto no disponible{Colors.RESET}"
+
+        # Mostrar resumen compacto
+        print(
+            f"{Colors.WHITE}  Total:{Colors.RESET} {Colors.CYAN}{local_count} tags{Colors.RESET} {sync_status}"
+        )
 
         if last_tag:
-            print(f"{Colors.WHITE}Último tag: {last_tag}{Colors.RESET}")
+            print(
+                f"{Colors.WHITE}  Actual:{Colors.RESET} {Colors.GREEN}{last_tag}{Colors.RESET}"
+            )
 
             # Verificar si el último commit tiene tag
             try:
                 head_commit = repo.head.commit
                 tag_obj = repo.tags[last_tag]
                 if tag_obj.commit.hexsha == head_commit.hexsha:
+                    commit_msg = head_commit.message.split(chr(10))[0][:35]
                     print(
-                        f"{Colors.WHITE}Último commit: {head_commit.hexsha[:7]} - {head_commit.message.split(chr(10))[0][:40]} {Colors.GREEN}✓{Colors.RESET}"
+                        f"{Colors.WHITE}  Commit:{Colors.RESET} {Colors.GREEN}✓{Colors.RESET} al día"
                     )
                 else:
+                    untagged = len(get_untagged_commits(repo))
                     print(
-                        f"{Colors.WHITE}Último commit: {Colors.YELLOW}Faltan commits por etiquetar{Colors.RESET}"
+                        f"{Colors.WHITE}  Commit:{Colors.RESET} {Colors.YELLOW}● {untagged} sin etiquetar{Colors.RESET}"
                     )
             except Exception:
                 pass
@@ -454,65 +470,70 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
     # Obtener repositorio Git
     repo = get_git_repo()
 
-    # Encabezado inicial
-    print()
-    print(f"{Colors.CYAN}{'=' * 49}{Colors.RESET}")
-    print(
-        f"{Colors.CYAN}{f'GESTOR DE VERSIONES GIT v{__version__}'.center(49)}{Colors.RESET}"
-    )
-    print(f"{Colors.CYAN}{'=' * 49}{Colors.RESET}")
-    print()
-
-    if dry_run:
-        print(f"{Colors.YELLOW}[MODO PRUEBA ACTIVADO]{Colors.RESET}")
-        print(
-            f"{Colors.YELLOW}Los comandos git se mostrarán pero NO se ejecutarán{Colors.RESET}"
-        )
-        print()
-
     # Obtener información inicial
     untagged_commits = get_untagged_commits(repo)
     last_tag = get_last_tag(repo)
 
-    # Mostrar resumen inicial
-    if untagged_commits:
-        print(
-            f"{Colors.CYAN}Se encontraron {len(untagged_commits)} commits sin etiquetar{Colors.RESET}"
-        )
-    else:
-        print(f"{Colors.GREEN}✓ No hay commits sin etiquetar{Colors.RESET}")
+    # Header profesional
+    print()
+    print(
+        f"{Colors.CYAN}╔══════════════════════════════════════════════════════════╗{Colors.RESET}"
+    )
+    print(
+        f"{Colors.CYAN}║{Colors.RESET}  {Colors.BOLD}{Colors.WHITE}INTERACTIVE GIT VERSIONEER{Colors.RESET}                    {Colors.CYAN}v{__version__} ║{Colors.RESET}"
+    )
+    print(
+        f"{Colors.CYAN}╚══════════════════════════════════════════════════════════╝{Colors.RESET}"
+    )
 
-    if last_tag:
-        print(f"{Colors.CYAN}Última etiqueta: {last_tag}{Colors.RESET}")
-    else:
+    if dry_run:
+        print()
         print(
-            f"{Colors.YELLOW}No hay etiquetas previas en el repositorio{Colors.RESET}"
+            f"{Colors.YELLOW}  [MODO PRUEBA] Los comandos se mostrarán pero NO se ejecutarán{Colors.RESET}"
         )
 
     print()
 
     # Funciones de estado y acciones para el menú principal
     def show_main_status():
-        """Muestra el estado actual del repositorio."""
+        """Muestra el estado actual del repositorio con dashboard avanzado."""
         import os
         import re
 
         # Recalcular valores cada vez para reflejar cambios
         current_untagged = get_untagged_commits(repo)
         current_last_tag = get_last_tag(repo)
+
+        # Dashboard de estado con separadores horizontales
         print(
-            f"{Colors.WHITE}Commits sin etiquetar: {len(current_untagged)}{Colors.RESET}"
+            f"{Colors.CYAN}────────────────────────────────────────────────────────────{Colors.RESET}"
+        )
+        print(f"{Colors.WHITE}  ESTADO DEL REPOSITORIO{Colors.RESET}")
+        print(
+            f"{Colors.CYAN}────────────────────────────────────────────────────────────{Colors.RESET}"
         )
 
-        # Último release (desde tags locales)
-        if current_last_tag:
-            print(f"{Colors.WHITE}Último release: {current_last_tag}{Colors.RESET}")
+        # Commits pendientes con indicador visual
+        if len(current_untagged) == 0:
+            print(
+                f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Commits:{Colors.RESET} {Colors.GREEN}Sin pendientes{Colors.RESET}"
+            )
+        else:
+            print(
+                f"  {Colors.YELLOW}●{Colors.RESET} {Colors.WHITE}Commits:{Colors.RESET} {Colors.YELLOW}{len(current_untagged)} pendiente(s) por etiquetar{Colors.RESET}"
+            )
 
-        # Último tag
+        # Versión actual
         if current_last_tag:
-            print(f"{Colors.WHITE}Último tag: {current_last_tag}{Colors.RESET}")
+            print(
+                f"  {Colors.CYAN}●{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.CYAN}{current_last_tag}{Colors.RESET}"
+            )
+        else:
+            print(
+                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.YELLOW}(sin versionado previo){Colors.RESET}"
+            )
 
-        # Último changelog
+        # Estado del changelog
         repo_root = repo.working_dir
         changelog_path = os.path.join(repo_root, "CHANGELOG.md")
         if os.path.exists(changelog_path):
@@ -522,11 +543,27 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
                 match = re.search(r"##\s*\[([^\]]+)\]", content)
                 if match:
                     last_changelog_version = match.group(1)
-                    print(
-                        f"{Colors.WHITE}Último changelog: {last_changelog_version}{Colors.RESET}"
-                    )
+                    if last_changelog_version == current_last_tag:
+                        print(
+                            f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.GREEN}Sincronizado ({last_changelog_version}){Colors.RESET}"
+                        )
+                    else:
+                        print(
+                            f"  {Colors.YELLOW}●{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}Desincronizado{Colors.RESET}"
+                        )
             except Exception:
-                pass
+                print(
+                    f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}(error al leer){Colors.RESET}"
+                )
+        else:
+            print(
+                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}(no existe){Colors.RESET}"
+            )
+
+        print(
+            f"{Colors.CYAN}────────────────────────────────────────────────────────────{Colors.RESET}"
+        )
+        print()
 
     def get_footer_status() -> str:
         """Retorna el string de estado para el footer del menú."""
@@ -541,11 +578,9 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
             username = (
                 author_email.split("@")[0] if "@" in author_email else author_email
             )
-            return (
-                f"{Colors.WHITE}Autor: {username} | igv {version_label}{Colors.RESET}"
-            )
+            return f"{Colors.WHITE}● {username} | igv {version_label}{Colors.RESET}"
         except Exception:
-            return f"{Colors.CYAN}igv {version_label}{Colors.RESET}"
+            return f"{Colors.CYAN}● igv {version_label}{Colors.RESET}"
 
     def action_manage_commits():
         """Abre el submenú de gestión de commits."""
@@ -579,15 +614,23 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
         return True
 
     # Crear y ejecutar menú principal
-    main_menu = Menu("GESTOR DE VERSIONES GIT")
+    main_menu = Menu("INTERACTIVE GIT VERSIONEER")
     main_menu.set_status_callback(show_main_status)
     main_menu.set_footer_callback(get_footer_status)
-    main_menu.add_item("1", "Gestionar Commits", action_manage_commits)
-    main_menu.add_item("2", "Gestionar Tags", action_open_tags_submenu)
-    main_menu.add_item("3", "Gestionar Releases", action_manage_releases)
-    main_menu.add_item("4", "Gestionar Changelogs", action_manage_changelogs)
-    main_menu.add_item("5", "Configuración", action_config)
-    main_menu.add_item("6", "Salir", action_exit)
+    main_menu.add_item(
+        "1", "Commits   → Revisar y etiquetar cambios", action_manage_commits
+    )
+    main_menu.add_item(
+        "2", "Tags      → Gestionar versiones semánticas", action_open_tags_submenu
+    )
+    main_menu.add_item(
+        "3", "Releases  → Publicar en GitHub/GitLab", action_manage_releases
+    )
+    main_menu.add_item(
+        "4", "Changelogs→ Documentar cambios del proyecto", action_manage_changelogs
+    )
+    main_menu.add_item("5", "Config    → Ajustes de API y preferencias", action_config)
+    main_menu.add_item("0", "Salir     → Cerrar aplicación", action_exit)
 
     try:
         main_menu.run(is_main_menu=True)

@@ -65,11 +65,30 @@ def apply_tags(
     changelog_versions = _get_changelog_versions(repo)
     last_tag = get_last_tag(repo)
 
-    # Calcular las versiones que se van a crear
+    # Calcular las versiones que se van a crear de manera INCREMENTAL
+    # En lugar de calcular cada versión basándose en el repo, calculamos basándonos
+    # en la versión anterior calculada en esta misma sesión
     pending_versions = []
+    commit_to_version = {}  # Mapeo de commit a versión calculada
+
+    # Obtener la versión base (última versión del repo)
+    major, minor, patch = parse_version(last_tag) if last_tag else (0, 0, 0)
+
     for commit in processed_commits:
-        next_ver = get_next_version(repo, commit.version_type)
+        # Calcular siguiente versión basándose en la versión actual (incremental)
+        if commit.version_type == "major":
+            major += 1
+            minor = 0
+            patch = 0
+        elif commit.version_type == "minor":
+            minor += 1
+            patch = 0
+        elif commit.version_type == "patch":
+            patch += 1
+
+        next_ver = f"v{major}.{minor}.{patch}"
         pending_versions.append(next_ver)
+        commit_to_version[commit.hash] = next_ver  # Guardar la versión calculada
 
     # Verificar si las versiones pendientes están en el changelog
     missing_in_changelog = []
@@ -146,7 +165,8 @@ def apply_tags(
     error_count = 0
 
     for commit in processed_commits:
-        next_ver = get_next_version(repo, commit.version_type)
+        # Usar la versión calculada previamente en lugar de recalcular
+        next_ver = commit_to_version[commit.hash]
         message = commit.custom_message or commit.message
 
         print(
@@ -211,7 +231,8 @@ def apply_tags(
         print_header("ETIQUETAS CREADAS EN ESTA SESIÓN")
 
         for commit in processed_commits:
-            next_ver = get_next_version(repo, commit.version_type)
+            # Usar la versión calculada previamente en lugar de recalcular
+            next_ver = commit_to_version[commit.hash]
             print(f"  {next_ver}")
 
         print()
@@ -580,11 +601,12 @@ def sync_tags_from_remote(repo: git.Repo) -> bool:
         return False
 
 
-def push_tags_to_remote(repo: git.Repo) -> bool:
-    """Sube todas las etiquetas al repositorio remoto.
+def push_tags_to_remote(repo: git.Repo, page_size: int = 15) -> bool:
+    """Sube todas las etiquetas al repositorio remoto con paginación.
 
     Args:
         repo: Repositorio Git
+        page_size: Número de tags a mostrar por página (default: 15)
 
     Returns:
         bool: True si fue exitoso, False en caso de error
@@ -605,10 +627,53 @@ def push_tags_to_remote(repo: git.Repo) -> bool:
         print(f"{Colors.YELLOW}No hay tags locales para subir.{Colors.RESET}")
         return False
 
-    print(f"{Colors.WHITE}Tags locales encontrados:{Colors.RESET}")
-    for tag in local_tags:
-        print(f"  - {tag.name}")
-    print()
+    total_tags = len(local_tags)
+
+    # Paginación del listado
+    current_page = 0
+    tags_shown = 0
+
+    while tags_shown < total_tags:
+        # Calcular rango de tags para esta página
+        start_idx = current_page * page_size
+        end_idx = min(start_idx + page_size, total_tags)
+
+        # Mostrar tags de la página actual
+        print(f"{Colors.WHITE}Tags locales encontrados:{Colors.RESET}")
+        for i in range(start_idx, end_idx):
+            print(f"  - {local_tags[i].name}")
+
+        tags_shown = end_idx
+        current_page += 1
+
+        # Si quedan más tags por mostrar
+        if tags_shown < total_tags:
+            remaining = total_tags - tags_shown
+            print()
+            print(
+                f"{Colors.CYAN}Mostrados {tags_shown} de {total_tags} tags "
+                f"({remaining} más)...{Colors.RESET}"
+            )
+            print()
+            print(
+                f"{Colors.YELLOW}Opciones: "
+                f"{Colors.WHITE}[Enter]{Colors.YELLOW} ver más, "
+                f"{Colors.WHITE}[s]{Colors.YELLOW} subir todos, "
+                f"{Colors.WHITE}[c]{Colors.YELLOW} cancelar{Colors.RESET}"
+            )
+            choice = (
+                input(f"{Colors.WHITE}¿Qué desea hacer? {Colors.RESET}").strip().lower()
+            )
+
+            if choice == "c":
+                print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
+                return False
+            elif choice == "s":
+                break
+            # Si presiona Enter u otra cosa, continúa mostrando más tags
+        else:
+            # Se mostraron todos los tags
+            print()
 
     print(f"{Colors.YELLOW}¿Desea subir todos los tags al remoto?{Colors.RESET}")
     confirm = input(f"{Colors.WHITE}¿Continuar? (s/n): {Colors.RESET}").strip().lower()
@@ -618,7 +683,9 @@ def push_tags_to_remote(repo: git.Repo) -> bool:
         return False
 
     print()
-    print(f"{Colors.CYAN}Subiendo tags al repositorio remoto...{Colors.RESET}")
+    print(
+        f"{Colors.CYAN}Subiendo {total_tags} tags al repositorio remoto...{Colors.RESET}"
+    )
 
     try:
         remote.push(tags=True)

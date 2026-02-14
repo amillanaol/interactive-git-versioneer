@@ -8,7 +8,7 @@ from typing import List, Optional
 
 import git
 
-from ..core.git_ops import get_commit_diff, get_next_version
+from ..core.git_ops import get_commit_diff, get_next_version, parse_version
 from ..core.models import Commit
 from ..core.ui import Colors, clear_screen, print_header
 
@@ -106,15 +106,22 @@ def auto_generate_all_with_ai(
 
     # Verificar changelog ANTES de usar la IA (solo si no se omite la verificación)
     if not skip_changelog_check:
-        # Calculamos las versiones que se crearán para los commits pendientes
+        from ..core.git_ops import get_last_tag
+
+        # Calculamos las versiones que se crearán para los commits pendientes (INCREMENTAL)
         changelog_versions = _get_changelog_versions(repo)
         pending_versions = []
+
+        # Obtener la versión base (última versión del repo)
+        last_tag = get_last_tag(repo)
+        major, minor, patch = parse_version(last_tag) if last_tag else (0, 0, 0)
+
         for commit in commits:
-            # Asumimos patch como mínimo para calcular la próxima versión
-            next_ver = get_next_version(repo, "patch")
+            # Asumimos patch como mínimo para calcular las próximas versiones
+            patch += 1
+            next_ver = f"v{major}.{minor}.{patch}"
             if next_ver not in pending_versions:
                 pending_versions.append(next_ver)
-                break  # Solo necesitamos verificar la próxima versión
 
         # Verificar si las versiones pendientes están en el changelog
         missing_in_changelog = [
