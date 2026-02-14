@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-14 17:05*
+*Automatically generated with AI on 2026-02-14 17:33*
+
+## [v3.4.0] - 2026-02-14
+
+Actualiza versión a 3.3.0
+
+## [v3.3.1] - 2026-02-14
+
+Arregla lógica de sugerencia de versión
 
 ## [v3.3.0] - 2026-02-14
 
