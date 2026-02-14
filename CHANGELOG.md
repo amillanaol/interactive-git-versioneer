@@ -2,7 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-14 01:56*
+*Automatically generated with AI on 2026-02-14 14:46*
+
+## [v0.28.10] - 2026-02-14
+
+### Mejoras y Correcciones
+- Agregar pruebas para la funcionalidad de limpieza de etiquetas duplicadas
+
+## [v0.28.9] - 2026-02-14
+
+Reorganiza la navegación del sitio en la documentación.
+
+## [v0.28.8] - 2026-02-14
+
+### Mejoras en la documentación
+- Actualiza la documentación del proyecto con información detallada sobre uso, instalación y arquitectura en el archivo README.
+
+## [v0.28.7] - 2026-02-14
+
+### Cambios significativos
+- Elimina archivos de documentación eliminados para mantener la documentación actualizada.
+
+## [v0.28.6] - 2026-02-14
+
+- Agrega documentación para diagnósticos de CI/CD y limpieza de etiquetas duplicadas.
+
+## [v0.28.5] - 2026-02-14
+
+- Agrega una guía de documentación de API en la sección de referencia.
+
+## [v0.28.4] - 2026-02-14
+
+- Agrega una guía de inicio rápido para usuarios en la documentación.
+
+## [v0.28.3] - 2026-02-14
+
+### Cambios importantes
+- Actualiza la documentación del registro de cambios con nuevas entradas de versión
 
 ## [v0.28.2] - 2026-02-14
 
@@ -27,51 +63,7 @@ All notable changes to this project will be documented in this file.
 
 ## [v0.26.0] - 2026-02-13
 
-### Nuevas Características
-- Agrega una Interfaz de Usuario Basada en Texto para Git Versioneer Interactivo.
-
-## [v0.25.0] - 2026-02-14
-
-### Nuevas Características
-- Agrega el modelo de dominio Commit a los modelos.
-
-## [v0.24.0] - 2026-02-14
-
-### Nuevas Características
-- Agregar la interfaz GitRepository en el dominio
-
-## [v0.23.0] - 2026-02-13
-
-### Nuevo
-- Agrega una Interfaz de Usuario Basada en Texto para Git Versioneer Interactivo
-
-## [v0.22.0] - 2026-02-14
-
-### Nuevas Características
-- Agregar el modelo de dominio Commit a los modelos.
-
-## [v0.21.0] - 2026-02-14
-
-### 💡 Nuevas Características
-- Agrega la interfaz GitRepository en el dominio
-
-## [v0.20.0] - 2026-02-13
-
-Agrega una Interfaz de Usuario Basada en Texto para una versión interactiva de Git Versioneer.
-
-## [v0.19.0] - 2026-02-14
-
-### Nuevas Características
-- Agregar modelo de dominio de Commit en los modelos.
-
-## [v0.18.0] - 2026-02-14
-
-### Nuevas Características
-- Agrega la interfaz GitRepository en el dominio para mejorar la interoperabilidad con repositorios Git.
-
-## [v0.17.0] - 2026-02-13
-
-Agrega una interfaz de usuario basada en texto para una experiencia de usuario interactiva en Git Versioneer.
+Actualiza interfaz de usuario interactiva
 
 ## [v0.16.0] - 2026-02-13
 
@@ -107,13 +99,7 @@ Actualiza la documentación para reflejar el nuevo método de instalación y la 
 
 ## [v0.12.0] - 2026-02-08
 
-Agrega la funcionalidad de registro para mejorar el seguimiento y depuración del sistema.
-
-## [v0.11.5] - 2026-02-08
-
-Agrega funcionalidad de registro para mejorar la generación de registros de cambios y la detección de errores. 
-Añade una guía de depuración y solución de problemas. 
-Mejora la funcionalidad central con registro.
+Agrega funcionalidad de logging
 
 ## [v0.11.4] - 2026-02-08
 
