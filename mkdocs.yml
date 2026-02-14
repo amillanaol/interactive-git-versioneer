@@ -3,13 +3,18 @@ site_description: Documentación del proyecto Interactive Git Versioneer
 site_url: http://example.com
 nav:
   - Home: index.md
-  - Usage: usage.md
-  - Modules:
-    - Core: modules/core_git_ops.md
-    - AI: modules/core_ai.md
+  - Usuario:
+    - Guía de Inicio Rápido: usuario/guia_inicio_rapido.md
+  - Operaciones:
+    - Limpieza de Tags Duplicados: operaciones/limpieza_tags_duplicados.md
+    - Diagnóstico CI/CD: operaciones/cicd_diagnostico.md
+  - Módulos:
+    - Core Git Ops: modules/core_git_ops.md
+    - Core AI: modules/core_ai.md
     - Tags: modules/tagger.md
     - Releases: modules/releases.md
-  - API: api.md
+  - Referencia:
+    - API: referencia/api_documentacion.md
 plugins:
   - search
   - mkdocstrings:
