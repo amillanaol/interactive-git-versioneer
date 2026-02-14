@@ -152,6 +152,71 @@ def show_generate_changelog(repo: Repo) -> None:
         )
 
 
+def _validate_and_clean_progress(
+    repo: Repo, progress: Dict[str, str], tags: List[git.TagReference]
+) -> Dict[str, str]:
+    """Validates changelog progress and removes inconsistent ranges.
+
+    Detects and removes:
+    - Ranges with non-existent tags
+    - Ranges that skip versions (e.g., v0.11.5→v0.13.1)
+    - Inverted ranges (e.g., v0.12.0→v0.11.5)
+
+    Args:
+        repo: The Git repository object.
+        progress: Current progress dictionary.
+        tags: List of valid tags.
+
+    Returns:
+        Dict: Cleaned progress dictionary.
+    """
+    try:
+        from packaging.version import parse as parse_version_pkg
+    except ImportError:
+        # Fallback: skip validation if packaging is not available
+        return progress
+
+    valid_tag_names = {t.name for t in tags}
+    cleaned_progress = {}
+    removed_count = 0
+
+    # Build valid consecutive ranges
+    sorted_tags = sorted(tags, key=lambda t: parse_version_pkg(t.name))
+    valid_ranges = set()
+
+    # start → first_tag
+    if sorted_tags:
+        valid_ranges.add(f"start→{sorted_tags[0].name}")
+
+    # tag[i] → tag[i+1]
+    for i in range(len(sorted_tags) - 1):
+        valid_ranges.add(f"{sorted_tags[i].name}→{sorted_tags[i + 1].name}")
+
+    for range_key, content in progress.items():
+        # Skip special entries
+        if "HEAD" in range_key:
+            continue
+
+        # Check if it's a valid consecutive range
+        if range_key in valid_ranges:
+            cleaned_progress[range_key] = content
+        else:
+            removed_count += 1
+
+    if removed_count > 0:
+        print(
+            f"{Colors.YELLOW}⚠️  Se detectaron y limpiaron {removed_count} rangos inconsistentes del progreso.{Colors.RESET}"
+        )
+        print(
+            f"{Colors.WHITE}   Estos rangos serán regenerados correctamente.{Colors.RESET}"
+        )
+        print()
+        # Save cleaned progress
+        _save_changelog_progress(repo, cleaned_progress)
+
+    return cleaned_progress
+
+
 def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) -> None:
     """Generates and displays all changelogs between consecutive tags, from the beginning
     to the first tag, and from the last tag to HEAD, using AI to summarize.
@@ -236,9 +301,19 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
         logger.function_exit("action_generate_all_changelogs_with_ai")
         return
 
-    tags: List[git.TagReference] = sorted(
-        repo.tags, key=lambda t: t.commit.committed_date
-    )  # Sort chronologically
+    # Sort tags by semantic version (not by commit date)
+    # This ensures ranges like v0.17.0→v0.18.0 instead of v0.17.0→v0.20.0
+    try:
+        from packaging.version import parse as parse_version_pkg
+
+        tags: List[git.TagReference] = sorted(
+            repo.tags, key=lambda t: parse_version_pkg(t.name)
+        )
+    except ImportError:
+        # Fallback to commit date if packaging is not available
+        tags: List[git.TagReference] = sorted(
+            repo.tags, key=lambda t: t.commit.committed_date
+        )
 
     if not tags:
         print(
@@ -250,8 +325,9 @@ def action_generate_all_changelogs_with_ai(repo: Repo, rebuild: bool = False) ->
         wait_for_enter()
         return
 
-    # Load existing progress
+    # Load existing progress and validate it
     progress: Dict[str, str] = _load_changelog_progress(repo)
+    progress = _validate_and_clean_progress(repo, progress, tags)
 
     # Load versions already in CHANGELOG.md file
     changelog_file_versions: List[str] = []

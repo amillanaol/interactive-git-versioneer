@@ -89,6 +89,8 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
         last_file_changelog = None
         last_file_changelog_date = None
         total_changelogs_in_file = 0
+        has_unreleased_entry = False
+        unreleased_date = None
         if os.path.exists(changelog_path):
             try:
                 with open(changelog_path, "r", encoding="utf-8") as f:
