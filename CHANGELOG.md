@@ -2,7 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-14 16:29*
+*Automatically generated with AI on 2026-02-14 17:05*
+
+## [v3.3.0] - 2026-02-14
+
+Actualiza gestión de versiones
+
+## [v3.2.0] - 2026-02-14
+
+Actualiza lógica de versionado
+
+## [v3.1.8] - 2026-02-14
+
+Simplifica Makefile
+
+## [v3.1.7] - 2026-02-14
+
+Actualiza README
+
+## [v3.1.6] - 2026-02-14
+
+Actualiza versión a 3.1.6
 
 ## [v3.1.5] - 2026-02-14
 
