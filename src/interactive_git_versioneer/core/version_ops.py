@@ -1,6 +1,7 @@
+import os
 import re
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from .ui import Colors, clear_screen, wait_for_enter
 
@@ -12,6 +13,48 @@ def version_tuple(v: str) -> tuple:
         return tuple(int(p) for p in parts[:3])
     except:
         return (0, 0, 0)
+
+
+def get_changelog_versions(repo: "git.Repo") -> List[str]:
+    """Obtiene las versiones registradas en el archivo CHANGELOG.md.
+
+    Args:
+        repo: Repositorio Git
+
+    Returns:
+        List[str]: Lista de versiones encontradas en el changelog (excluyendo "Unreleased")
+    """
+    changelog_path = os.path.join(repo.working_dir, "CHANGELOG.md")
+    versions = []
+
+    if os.path.exists(changelog_path):
+        try:
+            with open(changelog_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            # Buscar todas las versiones en el formato ## [vX.X.X] o ## [X.X.X]
+            matches = re.findall(r"##\s*\[([^\]]+)\]", content)
+            # Filtrar "Unreleased" (entrada temporal para commits pendientes)
+            versions = [v for v in matches if v.lower() != "unreleased"]
+        except Exception:
+            pass
+
+    return versions
+
+
+def get_last_changelog_version(repo: "git.Repo") -> Optional[str]:
+    """Obtiene la última versión registrada en el CHANGELOG.md.
+
+    Args:
+        repo: Repositorio Git
+
+    Returns:
+        Optional[str]: Última versión en el changelog, o None si no hay
+    """
+    versions = get_changelog_versions(repo)
+    if versions:
+        # La primera versión en el changelog es la más reciente
+        return versions[0].lstrip("v")
+    return None
 
 
 def get_current_version(repo_root: Path) -> Optional[str]:
@@ -62,39 +105,36 @@ def is_valid_semver(version_str: str) -> bool:
 
 
 def get_suggested_version(repo: "git.Repo", current_version: str) -> Optional[str]:
-    """Sugiere la siguiente versión basada en el último tag del repositorio.
+    """Sugiere la siguiente versión basada en el CHANGELOG y tags del repositorio.
 
-    Si la versión actual del pyproject.toml es mayor que el último tag,
-    usa esa como base para calcular la sugerencia.
+    Orden de prioridad (fuente de verdad):
+    1. Última versión en CHANGELOG.md (versiones documentadas)
+    2. Último tag de Git (si no hay changelog)
+    3. 0.0.1 (si no hay ni changelog ni tags)
     """
     try:
-        from .git_ops import get_last_tag, get_next_version
+        from .git_ops import get_last_tag, parse_version
 
+        # 1. Intentar obtener última versión del CHANGELOG (fuente de verdad principal)
+        last_changelog_ver = get_last_changelog_version(repo)
+
+        if last_changelog_ver:
+            # Hay versiones en el changelog, sugerir siguiente patch
+            major, minor, patch = parse_version(last_changelog_ver)
+            return f"{major}.{minor}.{patch + 1}"
+
+        # 2. Si no hay changelog, usar el último tag
         last_tag = get_last_tag(repo)
 
-        # Determinar versión base: usar la mayor entre el tag y pyproject.toml
-        base_version = current_version
-        if last_tag:
-            # Extraer número de versión del tag (sin 'v')
-            tag_version = last_tag.lstrip("v")
+        if not last_tag:
+            # Sin tags ni changelog, sugerir 0.0.1
+            return "0.0.1"
 
-            if version_tuple(base_version) > version_tuple(tag_version):
-                # pyproject tiene versión más alta, usarla como base y calcular siguiente
-                # sobre esa versión
-                try:
-                    parts = base_version.split(".")
-                    if len(parts) >= 3:
-                        parts[2] = str(int(parts[2]) + 1)
-                        return ".".join(parts[:3])
-                except:
-                    pass
+        # Extraer número de versión del tag (sin 'v')
+        tag_version = last_tag.lstrip("v")
+        major, minor, patch = parse_version(tag_version)
 
-        # Caso normal: usar el tag como base
-        suggested = get_next_version(repo, "patch")
-        if suggested and suggested.startswith("v"):
-            suggested = suggested[1:]
-
-        return suggested
+        return f"{major}.{minor}.{patch + 1}"
     except Exception:
         pass
 
@@ -112,11 +152,12 @@ def action_update_project_version(repo: "git.Repo") -> bool:
     repo_root = Path(repo.working_dir)
     current_version = get_current_version(repo_root)
 
-    # Obtener último tag para comparación
+    # Obtener último tag y última versión del changelog para comparación
     from .git_ops import get_last_tag
 
     last_tag = get_last_tag(repo)
     last_tag_version = last_tag.lstrip("v") if last_tag else None
+    last_changelog_ver = get_last_changelog_version(repo)
 
     if current_version:
         print(
@@ -129,23 +170,57 @@ def action_update_project_version(repo: "git.Repo") -> bool:
         wait_for_enter()
         return False
 
-    # Advertir si hay inconsistencia entre pyproject y tags
+    # Mostrar estado del ecosistema de versiones
+    print()
+    print(f"{Colors.CYAN}Estado del versionado:{Colors.RESET}")
+
+    # Mostrar último changelog
+    if last_changelog_ver:
+        print(f"{Colors.WHITE}  • Último changelog: {last_changelog_ver}{Colors.RESET}")
+    else:
+        print(f"{Colors.WHITE}  • Último changelog: {Colors.YELLOW}(ninguno){Colors.RESET}")
+
+    # Mostrar último tag
     if last_tag_version:
-        if version_tuple(current_version) > version_tuple(last_tag_version):
+        print(f"{Colors.WHITE}  • Último tag: {last_tag_version}{Colors.RESET}")
+    else:
+        print(f"{Colors.WHITE}  • Último tag: {Colors.YELLOW}(ninguno){Colors.RESET}")
+
+    print(f"{Colors.WHITE}  • pyproject.toml: {current_version}{Colors.RESET}")
+
+    # Advertir si hay inconsistencias
+    print()
+    has_issues = False
+
+    # Comparar changelog con pyproject
+    if last_changelog_ver:
+        if version_tuple(current_version) > version_tuple(last_changelog_ver):
             print(
-                f"{Colors.RED}⚠ Advertencia: pyproject.toml ({current_version}) está por "
-                f"delante del último tag ({last_tag}).{Colors.RESET}"
+                f"{Colors.YELLOW}⚠ pyproject.toml ({current_version}) está adelantado del changelog ({last_changelog_ver}){Colors.RESET}"
             )
             print(
-                f"{Colors.WHITE}  El tag {last_tag} existe pero pyproject tiene versión mayor.{Colors.RESET}"
+                f"{Colors.WHITE}  → Si {current_version} ya está implementado, genera su changelog.{Colors.RESET}"
             )
-        elif version_tuple(current_version) < version_tuple(last_tag_version):
+            has_issues = True
+        elif version_tuple(current_version) < version_tuple(last_changelog_ver):
             print(
-                f"{Colors.RED}⚠ Advertencia: pyproject.toml ({current_version}) está por "
-                f"detrás del último tag ({last_tag}).{Colors.RESET}"
+                f"{Colors.RED}⚠ pyproject.toml ({current_version}) está atrasado del changelog ({last_changelog_ver}){Colors.RESET}"
             )
-        else:
-            print(f"{Colors.WHITE}Último tag: {Colors.GREEN}{last_tag}{Colors.RESET}")
+            print(
+                f"{Colors.WHITE}  → Actualiza pyproject.toml a la versión del changelog.{Colors.RESET}"
+            )
+            has_issues = True
+
+    # Comparar tag con changelog
+    if last_tag_version and last_changelog_ver:
+        if version_tuple(last_tag_version) != version_tuple(last_changelog_ver):
+            print(
+                f"{Colors.YELLOW}⚠ Desincronización entre tag ({last_tag_version}) y changelog ({last_changelog_ver}){Colors.RESET}"
+            )
+            has_issues = True
+
+    if not has_issues:
+        print(f"{Colors.GREEN}✓ Todo sincronizado correctamente.{Colors.RESET}")
 
     # Obtener versión sugerida
     suggested_version = get_suggested_version(repo, current_version)
