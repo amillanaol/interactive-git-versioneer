@@ -296,6 +296,7 @@ def run_commits_submenu(
         return False
 
     def action_apply_tags():
+        nonlocal commits
         print()
         print(f"{Colors.YELLOW}¿Desea aplicar las etiquetas?{Colors.RESET}")
         print(
@@ -316,6 +317,10 @@ def run_commits_submenu(
         if confirm == "s":
             success = apply_tags(repo, commits, dry_run, push)
             if success and not dry_run:
+                # Filtrar commits que ya tienen tags creados
+                from ..core.git_ops import get_untagged_commits
+
+                commits = get_untagged_commits(repo)
                 print()
                 print(f"{Colors.GREEN}Etiquetas aplicadas correctamente{Colors.RESET}")
 

@@ -425,6 +425,7 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
 
     def action_generate_tags_ai():
         """Genera tags automáticamente con IA desde el último tag."""
+        nonlocal untagged_commits
         if not untagged_commits:
             clear_screen()
             print_header("GENERAR TAGS CON IA")
@@ -432,6 +433,10 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
             wait_for_enter()
             return False
         auto_generate_all_with_ai(repo, untagged_commits)
+        # Recalcular commits sin etiquetar después de generar tags
+        from ..core.git_ops import get_untagged_commits
+
+        untagged_commits = get_untagged_commits(repo)
         wait_for_enter()
         return False
 
@@ -584,12 +589,18 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
 
     def action_manage_commits():
         """Abre el submenú de gestión de commits."""
+        nonlocal untagged_commits
         run_commits_submenu(repo, untagged_commits, dry_run, push)
+        # Recalcular commits sin etiquetar después de volver del submenú
+        untagged_commits = get_untagged_commits(repo)
         return False
 
     def action_open_tags_submenu():
         """Abre el submenú de gestión de tags."""
+        nonlocal untagged_commits
         run_tag_management_submenu(repo, untagged_commits, dry_run, push)
+        # Recalcular commits sin etiquetar después de volver del submenú
+        untagged_commits = get_untagged_commits(repo)
         return False
 
     def action_manage_releases():
