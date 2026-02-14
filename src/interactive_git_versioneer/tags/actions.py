@@ -5,6 +5,7 @@ Contiene funciones para crear, eliminar, modificar y sincronizar tags.
 """
 
 import re
+from collections import defaultdict
 from typing import List
 
 import git
@@ -694,3 +695,104 @@ def push_tags_to_remote(repo: git.Repo, page_size: int = 15) -> bool:
     except Exception as e:
         print(f"{Colors.RED}✗ Error al subir tags: {e}{Colors.RESET}")
         return False
+
+
+def clean_duplicate_tags(repo: git.Repo, include_remote: bool = True) -> bool:
+    """Elimina tags duplicados, manteniendo solo el de versión más alta por commit.
+
+    Args:
+        repo: Repositorio Git
+        include_remote: Si True, también limpia tags remotos
+
+    Returns:
+        bool: True si se eliminaron duplicados, False si no hay o se canceló
+    """
+    from collections import defaultdict
+
+    clear_screen()
+    print_header("LIMPIAR TAGS DUPLICADOS")
+
+    # Mapear commits a tags
+    commit_to_tags = defaultdict(list)
+    for tag in repo.tags:
+        try:
+            commit_to_tags[tag.commit.hexsha].append(tag.name)
+        except Exception:
+            continue
+
+    # Encontrar duplicados
+    duplicates = {
+        sha: tag_names
+        for sha, tag_names in commit_to_tags.items()
+        if len(tag_names) > 1
+    }
+
+    if not duplicates:
+        print(f"{Colors.GREEN}No se encontraron tags duplicados.{Colors.RESET}")
+        wait_for_enter()
+        return True
+
+    # Mostrar duplicados encontrados
+    print(
+        f"{Colors.YELLOW}Se encontraron {len(duplicates)} commits con tags duplicados:{Colors.RESET}"
+    )
+    print()
+
+    tags_to_delete = []
+    for commit_sha, tag_names in duplicates.items():
+        sorted_tags = sorted(tag_names, key=parse_version, reverse=True)
+        keep_tag = sorted_tags[0]
+        delete_tags = sorted_tags[1:]
+
+        print(f"{Colors.CYAN}Commit: {commit_sha[:7]}{Colors.RESET}")
+        print(f"  {Colors.GREEN}Mantener: {keep_tag}{Colors.RESET}")
+        for tag in delete_tags:
+            print(f"  {Colors.RED}Eliminar: {tag}{Colors.RESET}")
+            tags_to_delete.append(tag)
+        print()
+
+    print(
+        f"{Colors.YELLOW}Total de tags a eliminar: {len(tags_to_delete)}{Colors.RESET}"
+    )
+    print()
+
+    confirm = (
+        input(f"{Colors.WHITE}¿Continuar con la eliminación? (s/n): {Colors.RESET}")
+        .strip()
+        .lower()
+    )
+
+    if confirm != "s":
+        print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
+        return False
+
+    # Eliminar tags locales
+    for tag_name in tags_to_delete:
+        try:
+            repo.delete_tag(tag_name)
+            print(f"{Colors.RED}✓ Eliminado tag local: {tag_name}{Colors.RESET}")
+        except Exception as e:
+            print(f"{Colors.RED}✗ Error al eliminar tag {tag_name}: {e}{Colors.RESET}")
+
+    # Eliminar tags remotos si se solicita
+    if include_remote:
+        try:
+            remote = repo.remotes.origin
+            for tag_name in tags_to_delete:
+                try:
+                    remote.push(
+                        refs=f"refs/tags/{tag_name}:refs/tags/{tag_name}", delete=True
+                    )
+                    print(
+                        f"{Colors.RED}✓ Eliminado tag remoto: {tag_name}{Colors.RESET}"
+                    )
+                except Exception as e:
+                    print(
+                        f"{Colors.RED}✗ Error al eliminar tag remoto {tag_name}: {e}{Colors.RESET}"
+                    )
+        except AttributeError:
+            print(f"{Colors.YELLOW}No hay remoto 'origin' configurado.{Colors.RESET}")
+
+    print(f"{Colors.GREEN}✓ Limpieza de duplicados completada.{Colors.RESET}")
+    wait_for_enter()
+    return True
