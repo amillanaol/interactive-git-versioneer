@@ -1,63 +1,50 @@
-.PHONY: help install install-dev test clean build publish dev lint format
-
-# Variables
-PYTHON := python
-PIP := pip
-PYTEST := pytest
+.PHONY: help clean build upload-test upload install dev test
 
 help:
-	@echo "Comandos disponibles:"
-	@echo "  make install      - Instalar el paquete en modo desarrollo"
-	@echo "  make install-dev  - Instalar con dependencias de desarrollo"
-	@echo "  make test         - Ejecutar tests con pytest"
-	@echo "  make clean        - Limpiar archivos generados"
-	@echo "  make build        - Construir el paquete para distribución"
-	@echo "  make publish      - Publicar a PyPI (requiere credenciales)"
-	@echo "  make dev          - Ejecutar en modo desarrollo"
-	@echo "  make lint         - Verificar código con flake8 (si está instalado)"
-	@echo "  make format       - Formatear código con black (si está instalado)"
-
-install:
-	@echo "Instalando interactive-git-versioneer en modo desarrollo..."
-	$(PIP) install -e .
-	@echo "Instalación completada. Ejecuta 'igv' para usar la aplicación."
-
-install-dev:
-	@echo "Instalando con dependencias de desarrollo..."
-	$(PIP) install -e ".[dev]"
-	@echo "Instalación completada con dependencias de desarrollo."
-
-test:
-	@echo "Ejecutando tests..."
-	$(PYTEST) tests/ -v --cov=src/interactive_git_versioneer --cov-report=term-missing
+	@echo "Comandos disponibles para Interactive Git Versioneer:"
+	@echo ""
+	@echo "  make clean        - Limpia archivos de build (dist/, build/, *.egg-info)"
+	@echo "  make build        - Limpia y construye el paquete"
+	@echo "  make upload-test  - Sube el paquete a TestPyPI"
+	@echo "  make upload       - Sube el paquete a PyPI (producción)"
+	@echo "  make install      - Instala el paquete localmente en modo editable"
+	@echo "  make dev          - Instala dependencias de desarrollo"
+	@echo "  make test         - Ejecuta los tests con pytest"
+	@echo ""
 
 clean:
-	@echo "Limpiando archivos generados..."
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	find . -type f -name "*.pyo" -delete 2>/dev/null || true
-	find . -type f -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
-	rm -rf build/ dist/ .pytest_cache/ .coverage htmlcov/ 2>/dev/null || true
-	@echo "Limpieza completada."
+	@echo "🧹 Limpiando archivos de build..."
+	rm -rf dist/
+	rm -rf build/
+	rm -rf src/*.egg-info
+	rm -rf *.egg-info
+	@echo "✅ Limpieza completada"
 
-build:
-	@echo "Construyendo paquete..."
-	$(PYTHON) -m build
-	@echo "Paquete construido en dist/"
+build: clean
+	@echo "🔨 Construyendo el paquete..."
+	python -m build
+	@echo "✅ Build completado. Archivos en dist/:"
+	@ls -lh dist/
 
-publish: build
-	@echo "Publicando a PyPI..."
-	$(PYTHON) -m twine upload dist/*
-	@echo "Paquete publicado exitosamente."
+upload-test: build
+	@echo "📤 Subiendo a TestPyPI..."
+	python -m twine upload --repository testpypi dist/* --verbose
+
+upload: build
+	@echo "⚠️  ADVERTENCIA: Vas a subir a PyPI PRODUCCIÓN"
+	@echo "Presiona Ctrl+C para cancelar, Enter para continuar..."
+	@read dummy
+	python -m twine upload dist/* --verbose
+
+install:
+	@echo "📦 Instalando en modo editable..."
+	pip install -e .
 
 dev:
-	@echo "Ejecutando igv en modo desarrollo..."
-	$(PYTHON) -m interactive_git_versioneer.main
+	@echo "🛠️  Instalando dependencias de desarrollo..."
+	pip install -e ".[dev]"
+	pip install build twine
 
-lint:
-	@echo "Verificando código con flake8..."
-	@which flake8 > /dev/null 2>&1 && flake8 src/ tests/ || echo "flake8 no instalado. Instalar con: pip install flake8"
-
-format:
-	@echo "Formateando código con black..."
-	@which black > /dev/null 2>&1 && black src/ tests/ || echo "black no instalado. Instalar con: pip install black"
+test:
+	@echo "🧪 Ejecutando tests..."
+	pytest tests/ -v
