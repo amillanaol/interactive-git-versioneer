@@ -2,10 +2,9 @@
 
 Interfaz CLI que combina menús interactivos con modelos de IA para automatizar el versionado semántico, generación de changelogs y releases en Git.
 
-| | | |
-| :---: | :---: | :---: |
-| ![PyPI](https://img.shields.io/pypi/v/interactive-git-versioneer.svg?label=Version) | ![License](https://img.shields.io/badge/license-MIT-blue?label=License) | ![Python](https://img.shields.io/badge/python-3.7+-blue?label=Python) |
-| ![Downloads](https://img.shields.io/pypi/dm/interactive-git-versioneer?label=Downloads) | ![Build](https://github.com/amillanaol/interactive-git-versioneer/actions/workflows/auto-tag.yml/badge.svg?label=Build) | ![GitHub stars](https://img.shields.io/github/stars/amillanaol/interactive-git-versioneer?label=Stars) |
+| | | | |
+| :---: | :---: | :---: | :---: |
+| ![Build](https://github.com/amillanaol/interactive-git-versioneer/actions/workflows/auto-tag.yml/badge.svg?label=Build) | ![License](https://img.shields.io/badge/license-MIT-blue?label=License) | ![PyPI](https://img.shields.io/pypi/v/interactive-git-versioneer.svg?label=Version) | ![Downloads](https://img.shields.io/pypi/dm/interactive-git-versioneer?label=Downloads) | 
 
 ## Inicio Rápido
 
@@ -46,32 +45,9 @@ El proyecto incluye un `Makefile` para automatizar tareas comunes de desarrollo:
 | `make help` | Muestra todos los comandos disponibles |
 | `make clean` | Limpia archivos de build (dist/, build/, *.egg-info) |
 | `make build` | Limpia y construye el paquete |
-| `make upload-test` | Sube el paquete a TestPyPI |
-| `make upload` | Sube el paquete a PyPI (producción) |
-| `make install` | Instala localmente en modo editable |
+| `make install` | Instala localmente |
 | `make dev` | Instala dependencias de desarrollo |
 | `make test` | Ejecuta tests con pytest |
-
-### Flujo de Publicación
-
-**Para TestPyPI (testing):**
-```bash
-cd interactive-git-versioneer
-make build        # Limpia y construye con la versión en pyproject.toml
-make upload-test  # Sube a TestPyPI
-```
-
-**Para PyPI (producción):**
-```bash
-# 1. Actualizar versión en pyproject.toml
-# 2. Crear tag git: git tag v3.1.6 && git push --tags
-make upload       # Construye y sube a PyPI (con confirmación)
-```
-
-**Notas importantes:**
-- PyPI/TestPyPI **NO permiten reutilizar versiones**. Si `v3.1.6` ya existe, debes incrementar a `v3.1.7`
-- `make build` automáticamente limpia archivos viejos antes de construir
-- Configura tokens en `~/.pypirc` ([ver configuración](docs/operaciones/publicacion_pypi.md))
 
 ## Documentación
 
