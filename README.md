@@ -2,9 +2,9 @@
 
 Interfaz CLI que combina menús interactivos con modelos de IA para automatizar el versionado semántico, generación de changelogs y releases en Git.
 
-| | | | |
-| :---: | :---: | :---: | :---: |
-| ![Build](https://github.com/amillanaol/interactive-git-versioneer/actions/workflows/auto-tag.yml/badge.svg?label=Build) | ![License](https://img.shields.io/badge/license-MIT-blue?label=License) | ![PyPI](https://img.shields.io/pypi/v/interactive-git-versioneer.svg?label=Version) | ![Downloads](https://img.shields.io/pypi/dm/interactive-git-versioneer?label=Downloads) | 
+| | | |
+| :---: | :---: | :---: |
+| ![Build](https://github.com/amillanaol/interactive-git-versioneer/actions/workflows/auto-tag.yml/badge.svg?label=Build) | ![License](https://img.shields.io/badge/license-MIT-blue?label=License) | ![PyPI](https://img.shields.io/pypi/v/interactive-git-versioneer.svg?label=Version) | 
 
 ## Inicio Rápido
 
