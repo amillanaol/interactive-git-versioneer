@@ -2,7 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-14 17:33*
+*Automatically generated with AI on 2026-02-25 13:36*
+
+## [v3.4.6] - 2026-02-18
+
+Remueve insignia de Descargas
+
+## [v3.4.5] - 2026-02-15
+
+Actualiza versión a 3.4.0
+
+## [v3.4.4] - 2026-02-15
+
+Actualiza README
+
+## [v3.4.3] - 2026-02-14
+
+Agregar documentación de ramas Git
+
+## [v3.4.2] - 2026-02-14
+
+Actualiza README
+
+## [v3.4.1] - 2026-02-14
+
+Actualiza CHANGELOG
 
 ## [v3.4.0] - 2026-02-14
 
