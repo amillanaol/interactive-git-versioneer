@@ -15,6 +15,26 @@ from ..core.ui import Colors, Menu, clear_screen, print_header, wait_for_enter
 from .config import get_config_value, load_config, set_config_value
 
 
+def _detect_provider(base_url: Optional[str]) -> str:
+    """Infer the AI provider name from its base URL.
+
+    Args:
+        base_url: The configured OPENAI.baseURL value.
+
+    Returns:
+        A human-readable provider name.
+    """
+    if not base_url:
+        return "Unknown"
+    if "groq.com" in base_url:
+        return "Groq"
+    if "openrouter.ai" in base_url:
+        return "OpenRouter"
+    if "openai.com" in base_url:
+        return "OpenAI"
+    return "Custom"
+
+
 def run_config_menu() -> None:
     """Executes the configuration submenu.
 
@@ -33,7 +53,8 @@ def run_config_menu() -> None:
 
         if api_key:
             masked_key: str = api_key[:8] + "..." if len(api_key) > 8 else "***"
-            print(f"{Colors.GREEN}AI: Configured ({masked_key}){Colors.RESET}")
+            provider: str = _detect_provider(base_url)
+            print(f"{Colors.GREEN}AI: {provider} ({masked_key}){Colors.RESET}")
         else:
             print(f"{Colors.YELLOW}AI: Not configured{Colors.RESET}")
 
@@ -90,7 +111,7 @@ def run_config_menu() -> None:
             Literal[False]: Always returns False to ensure the configuration menu remains active.
         """
         clear_screen()
-        print_header("CONFIGURE AI (Groq/OpenAI)")
+        print_header("CONFIGURE AI (Groq/OpenRouter/OpenAI)")
         print()
 
         print(f"{Colors.WHITE}Current configuration:{Colors.RESET}")
@@ -115,7 +136,8 @@ def run_config_menu() -> None:
         print(f"  1. API Key")
         print(f"  2. Base URL")
         print(f"  3. Model")
-        print(f"  4. Quick configuration (Groq)")
+        print(f"  4. Quick setup (Groq)")
+        print(f"  5. Quick setup (OpenRouter)")
         print(f"  0. Back")
         print()
 
@@ -129,8 +151,9 @@ def run_config_menu() -> None:
 
         elif choice == "2":
             print(f"{Colors.CYAN}Examples:{Colors.RESET}")
-            print(f"  Groq: https://api.groq.com/openai/v1")
-            print(f"  OpenAI: https://api.openai.com/v1")
+            print(f"  Groq:       https://api.groq.com/openai/v1")
+            print(f"  OpenRouter: https://openrouter.ai/api/v1")
+            print(f"  OpenAI:     https://api.openai.com/v1")
             new_url: str = input(
                 f"{Colors.WHITE}Enter Base URL: {Colors.RESET}"
             ).strip()
@@ -139,10 +162,15 @@ def run_config_menu() -> None:
                 print(f"{Colors.GREEN}✓ Base URL saved{Colors.RESET}")
 
         elif choice == "3":
-            print(f"{Colors.CYAN}Available Groq models:{Colors.RESET}")
-            print(f"  - llama-3.3-70b-versatile (recommended)")
+            print(f"{Colors.CYAN}Groq models:{Colors.RESET}")
+            print(f"  - llama-3.3-70b-versatile (recommended for Groq)")
             print(f"  - mixtral-8x7b-32768")
             print(f"  - gemma2-9b-it")
+            print(f"{Colors.CYAN}OpenRouter models:{Colors.RESET}")
+            print(f"  - meta-llama/llama-3.3-70b-instruct (recommended for OpenRouter)")
+            print(f"  - google/gemini-flash-1.5")
+            print(f"  - anthropic/claude-3-haiku")
+            print(f"  - openai/gpt-4o-mini")
             new_model: str = input(f"{Colors.WHITE}Enter model: {Colors.RESET}").strip()
             if new_model:
                 set_config_value("OPENAI.model", new_model)
@@ -150,7 +178,7 @@ def run_config_menu() -> None:
 
         elif choice == "4":
             print()
-            print(f"{Colors.CYAN}Quick configuration for Groq{Colors.RESET}")
+            print(f"{Colors.CYAN}Quick setup for Groq{Colors.RESET}")
             print(
                 f"{Colors.WHITE}Get your API key at: https://console.groq.com/keys{Colors.RESET}"
             )
@@ -164,6 +192,33 @@ def run_config_menu() -> None:
                 set_config_value("OPENAI.model", "llama-3.3-70b-versatile")
                 print()
                 print(f"{Colors.GREEN}✓ Groq configuration completed{Colors.RESET}")
+
+        elif choice == "5":
+            print()
+            print(f"{Colors.CYAN}Quick setup for OpenRouter{Colors.RESET}")
+            print(
+                f"{Colors.WHITE}Get your API key at: https://openrouter.ai/keys{Colors.RESET}"
+            )
+            print(
+                f"{Colors.WHITE}Hundreds of models available at: https://openrouter.ai/models{Colors.RESET}"
+            )
+            print()
+            api_key_input = input(
+                f"{Colors.WHITE}Enter your OpenRouter API Key: {Colors.RESET}"
+            ).strip()
+            if api_key_input:
+                set_config_value("OPENAI.key", api_key_input)
+                set_config_value("OPENAI.baseURL", "https://openrouter.ai/api/v1")
+                set_config_value(
+                    "OPENAI.model", "meta-llama/llama-3.3-70b-instruct"
+                )
+                print()
+                print(
+                    f"{Colors.GREEN}✓ OpenRouter configuration completed{Colors.RESET}"
+                )
+                print(
+                    f"{Colors.WHITE}Default model: meta-llama/llama-3.3-70b-instruct{Colors.RESET}"
+                )
 
         print()
         wait_for_enter()
@@ -220,11 +275,11 @@ def run_config_menu() -> None:
         )
         print()
         print(f"{Colors.WHITE}Available keys:{Colors.RESET}")
-        print(f"  {Colors.YELLOW}OPENAI.key{Colors.RESET}      - Groq/OpenAI API key")
+        print(f"  {Colors.YELLOW}OPENAI.key{Colors.RESET}      - API key (Groq / OpenRouter / OpenAI)")
         print(f"  {Colors.YELLOW}OPENAI.baseURL{Colors.RESET}  - API base URL")
         print(f"  {Colors.YELLOW}OPENAI.model{Colors.RESET}    - Model to use")
         print()
-        print(f"{Colors.WHITE}Example of full configuration:{Colors.RESET}")
+        print(f"{Colors.WHITE}Groq example:{Colors.RESET}")
         print(
             f'{Colors.CYAN}  igv config set OPENAI.key "gsk_your_api_key"{Colors.RESET}'
         )
@@ -233,6 +288,17 @@ def run_config_menu() -> None:
         )
         print(
             f'{Colors.CYAN}  igv config set OPENAI.model "llama-3.3-70b-versatile"{Colors.RESET}'
+        )
+        print()
+        print(f"{Colors.WHITE}OpenRouter example:{Colors.RESET}")
+        print(
+            f'{Colors.CYAN}  igv config set OPENAI.key "sk-or-v1-your_api_key"{Colors.RESET}'
+        )
+        print(
+            f'{Colors.CYAN}  igv config set OPENAI.baseURL "https://openrouter.ai/api/v1"{Colors.RESET}'
+        )
+        print(
+            f'{Colors.CYAN}  igv config set OPENAI.model "meta-llama/llama-3.3-70b-instruct"{Colors.RESET}'
         )
         print()
 
@@ -252,7 +318,7 @@ def run_config_menu() -> None:
     config_menu: Menu = Menu("CONFIGURATION")
     config_menu.set_status_callback(show_config_status)
     config_menu.add_item("1", "Show current configuration", action_show_config)
-    config_menu.add_item("2", "Configure AI (Groq/OpenAI)", action_configure_ai)
+    config_menu.add_item("2", "Configure AI (Groq/OpenRouter/OpenAI)", action_configure_ai)
     config_menu.add_item("3", "Add 'igv' alias to system", action_add_alias)
     config_menu.add_item("4", "Help - CLI Commands", action_show_help)
     config_menu.add_item("0", "Back to main menu", action_back)

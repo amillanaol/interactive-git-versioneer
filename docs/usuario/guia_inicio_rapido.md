@@ -23,13 +23,14 @@
 
 ## Configuración de IA
 
-Claves: `OPENAI.key`, `OPENAI.baseURL`.
+Claves requeridas: `OPENAI.key`, `OPENAI.baseURL`, `OPENAI.model`. Ejecutar `igv config` → opción 2 para quick setup interactivo (Groq o OpenRouter).
 
-Ejemplo:
-```bash
-igv config set OPENAI.key "gsk_your_key"
-igv config set OPENAI.baseURL "https://api.groq.com/openai/v1"
-```
+| Proveedor | Comando CLI |
+| :--- | :--- |
+| Groq | `igv config set OPENAI.baseURL "https://api.groq.com/openai/v1"` |
+| OpenRouter | `igv config set OPENAI.baseURL "https://openrouter.ai/api/v1"` |
+
+Referencia completa: [`docs/referencia/configuracion_ia.md`](../referencia/configuracion_ia.md)
 
 ## Generación de Documentación
 
@@ -44,4 +45,4 @@ Dependencias: `mkdocs`, `mkdocstrings[python]`.
 | :--- | :--- |
 | **Mantenedor** | amillanaol([https://orcid.org/0009-0003-1768-7048](https://orcid.org/0009-0003-1768-7048)) |
 | **Estado** | Final |
-| **Última Actualización** | 2026-02-14 |
+| **Última Actualización** | 2026-02-25 |

@@ -4,7 +4,7 @@ Core module for interactive-git-versioneer.
 Re-exports shared components: AI integration, Git operations, data models, and UI utilities.
 """
 
-from .ai import determine_version_type, generate_tag_message, get_openai_client
+from .ai import determine_version_type, generate_tag_message, get_ai_service
 from .git_ops import (
     get_commit_diff,
     get_git_repo,
@@ -31,7 +31,7 @@ from .ui import (
 
 __all__ = [
     # AI
-    "get_openai_client",
+    "get_ai_service",
     "generate_tag_message",
     "determine_version_type",
     # Git operations

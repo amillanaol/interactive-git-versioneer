@@ -27,9 +27,9 @@ Gestiona configuración en `~/.igv/config.json`.
 
 | Clave | Descripción |
 | :--- | :--- |
-| `OPENAI.key` | API key de Groq/OpenAI |
-| `OPENAI.baseURL` | URL base (ej: `https://api.groq.com/openai/v1`) |
-| `OPENAI.model` | Modelo (ej: `llama-3.3-70b-versatile`) |
+| `OPENAI.key` | API key del proveedor (Groq / OpenRouter / OpenAI) |
+| `OPENAI.baseURL` | URL base del endpoint (ej: `https://openrouter.ai/api/v1`) |
+| `OPENAI.model` | Modelo a usar (ej: `meta-llama/llama-3.3-70b-instruct`) |
 
 ## `igv clean-tags`
 
@@ -43,4 +43,4 @@ Elimina todos los tags locales y remotos. Operación destructiva irreversible.
 | :--- | :--- |
 | **Mantenedor** | amillanaol(https://orcid.org/0009-0003-1768-7048) |
 | **Estado** | Final |
-| **Última Actualización** | 2026-02-14 |
+| **Última Actualización** | 2026-02-25 |
