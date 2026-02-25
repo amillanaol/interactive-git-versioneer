@@ -26,8 +26,11 @@ Genera documentación de: `get_git_repo()`, `parse_version()`, `get_last_tag()`,
 
 | Módulo | Archivo |
 | :--- | :--- |
+| AI Port (abstracto) | `src/interactive_git_versioneer/domain/services/ai_service.py` |
+| Domain Commit | `src/interactive_git_versioneer/domain/models/commit.py` |
+| Domain Git Repository | `src/interactive_git_versioneer/domain/repositories/git_repository.py` |
+| Core AI Adapter | `src/interactive_git_versioneer/core/ai.py` |
 | Core Git Ops | `src/interactive_git_versioneer/core/git_ops.py` |
-| Core AI | `src/interactive_git_versioneer/core/ai.py` |
 | Core Models | `src/interactive_git_versioneer/core/models.py` |
 | Config | `src/interactive_git_versioneer/config/config.py` |
 | Tags Actions | `src/interactive_git_versioneer/tags/actions.py` |
@@ -37,4 +40,4 @@ Genera documentación de: `get_git_repo()`, `parse_version()`, `get_last_tag()`,
 | :--- | :--- |
 | **Mantenedor** | amillanaol([https://orcid.org/0009-0003-1768-7048](https://orcid.org/0009-0003-1768-7048)) |
 | **Estado** | Final |
-| **Última Actualización** | 2026-02-14 |
+| **Última Actualización** | 2026-02-25 |
