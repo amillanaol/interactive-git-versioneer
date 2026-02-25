@@ -64,13 +64,9 @@ def generate_ai_message(repo: git.Repo, commit: Commit) -> Optional[str]:
             print(
                 f"{Colors.RED}Error: API Key inválida o no configurada.{Colors.RESET}"
             )
-            print(f"{Colors.YELLOW}Configura tu API key con:{Colors.RESET}")
-            print(f'  igv config set OPENAI.key "tu_api_key"')
-            print(f'  igv config set OPENAI.baseURL "https://api.groq.com/openai/v1"')
-            print(f'  igv config set OPENAI.model "llama-3.3-70b-versatile"')
-            print(
-                f"{Colors.CYAN}Obtén tu API key en: https://console.groq.com/keys{Colors.RESET}"
-            )
+            print(f"{Colors.YELLOW}Configura tu proveedor con:{Colors.RESET}")
+            print(f"  igv config → Configure AI")
+            print(f"{Colors.CYAN}Proveedores soportados: Groq, OpenRouter, OpenAI{Colors.RESET}")
         else:
             print(f"{Colors.RED}Error al generar mensaje: {e}{Colors.RESET}")
         return None
@@ -224,7 +220,7 @@ def auto_generate_all_with_ai(
                     or "invalid api key" in error_str
                 ):
                     print(
-                        f'  {Colors.RED}✗ API Key inválida. Configura con: igv config set OPENAI.key "tu_key"{Colors.RESET}'
+                        f"  {Colors.RED}✗ API Key inválida. Ejecuta: igv config → Configure AI{Colors.RESET}"
                     )
                 else:
                     print(
