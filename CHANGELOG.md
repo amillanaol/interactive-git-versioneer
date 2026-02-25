@@ -2,7 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-*Automatically generated with AI on 2026-02-25 13:36*
+*Automatically generated with AI on 2026-02-25 14:10*
+
+## [v3.5.3] - 2026-02-25
+
+Actualiza documentación
+
+## [v3.5.2] - 2026-02-25
+
+Actualiza versión a 3.4.6
+
+## [v3.5.1] - 2026-02-25
+
+Actualiza documentación
+
+## [v3.5.0] - 2026-02-25
+
+Agregar soporte OpenRouter
 
 ## [v3.4.6] - 2026-02-18
 

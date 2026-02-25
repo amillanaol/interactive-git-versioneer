@@ -13,10 +13,34 @@ Usage (from config):
     message = service.generate_tag_message(...)
 """
 
-from typing import Any, Optional, Tuple
+from typing import Any, FrozenSet, Optional, Tuple
 
 from ..config import get_config_value
 from ..domain.services.ai_service import AiService
+
+# Models available on Groq's free plan.
+# Source: https://console.groq.com/docs/rate-limits (fetched 2026-02-25)
+# Models NOT in this set require a Developer/paid plan on Groq.
+_GROQ_FREE_MODELS: FrozenSet[str] = frozenset(
+    {
+        "allam-2-7b",
+        "canopylabs/orpheus-arabic-saudi",
+        "canopylabs/orpheus-v1-english",
+        "groq/compound",
+        "groq/compound-mini",
+        "llama-3.1-8b-instant",
+        "llama-3.3-70b-versatile",
+        "meta-llama/llama-4-maverick-17b-128e-instruct",
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "meta-llama/llama-guard-4-12b",
+        # Versioned variant of the free moonshotai/kimi-k2-instruct
+        "moonshotai/kimi-k2-instruct",
+        "moonshotai/kimi-k2-instruct-0905",
+        "openai/gpt-oss-120b",
+        "whisper-large-v3",
+        "whisper-large-v3-turbo",
+    }
+)
 
 
 class OpenAiCompatibleAdapter(AiService):
@@ -228,3 +252,84 @@ def determine_version_type(commit_message: str, commit_diff: str) -> Tuple[str, 
         commit_message=commit_message,
         commit_diff=commit_diff,
     )
+
+
+def list_available_models() -> list:
+    """Fetch the model catalog from the configured provider's API.
+
+    Calls the provider's ``/models`` endpoint using the credentials in
+    ``~/.igv/config.json``.  Extra fields (context window, owner) are
+    read from provider-specific extensions that Groq and OpenRouter
+    attach to the standard OpenAI model object.
+
+    Returns:
+        List of dicts sorted by model id, each containing:
+        - ``id`` (str): model identifier as used in API calls.
+        - ``context_window`` (Optional[int]): max context in tokens, or None.
+        - ``owned_by`` (str): provider/owner name (may be empty).
+
+        Returns an empty list when config is incomplete or any network
+        or API error occurs.
+    """
+    api_key: Optional[str] = get_config_value("OPENAI.key")
+    base_url: Optional[str] = get_config_value("OPENAI.baseURL")
+
+    if not api_key or not base_url:
+        return []
+
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=api_key, base_url=base_url)
+        response = client.models.list()
+
+        is_groq: bool = "groq.com" in base_url
+
+        result: list = []
+        for m in response.data:
+            # Context window field name varies by provider:
+            # Groq → context_window, OpenRouter → context_length.
+            # Both may appear as direct attributes or inside model_extra.
+            ctx: Optional[int] = None
+            model_extra: dict = getattr(m, "model_extra", None) or {}
+            for field in ("context_window", "context_length"):
+                val = getattr(m, field, None) or model_extra.get(field)
+                if val is not None:
+                    ctx = int(val)
+                    break
+
+            # Determine if the model is free to use.
+            # Groq: no pricing field in API; all models are free within rate limits.
+            # OpenRouter: pricing dict with prompt/completion as string cost per token;
+            #   "0" means free. Models with :free suffix are always free.
+            is_free: Optional[bool] = None
+            pricing: dict = model_extra.get("pricing") or {}
+            if pricing:
+                prompt_cost = str(pricing.get("prompt", "")).strip()
+                completion_cost = str(pricing.get("completion", "")).strip()
+                if prompt_cost == "0" and completion_cost == "0":
+                    is_free = True
+                elif prompt_cost or completion_cost:
+                    is_free = False
+            # OpenRouter convention: :free suffix always means free
+            if m.id.endswith(":free"):
+                is_free = True
+            # Groq: use the documented free-plan model list as the source of truth.
+            # Models absent from _GROQ_FREE_MODELS require a paid plan.
+            if is_free is None and is_groq:
+                is_free = m.id in _GROQ_FREE_MODELS
+
+            result.append(
+                {
+                    "id": m.id,
+                    "context_window": ctx,
+                    "owned_by": getattr(m, "owned_by", "") or "",
+                    "is_free": is_free,
+                }
+            )
+
+        result.sort(key=lambda x: x["id"])
+        return result
+
+    except Exception:
+        return []

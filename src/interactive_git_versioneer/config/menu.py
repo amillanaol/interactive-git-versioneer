@@ -15,6 +15,116 @@ from ..core.ui import Colors, Menu, clear_screen, print_header, wait_for_enter
 from .config import get_config_value, load_config, set_config_value
 
 
+_MODEL_PAGE_SIZE: int = 10
+
+
+def _format_ctx(ctx: Optional[int]) -> str:
+    """Format a token count as a human-readable string (e.g. 128K, 1M)."""
+    if ctx is None:
+        return "-"
+    if ctx >= 1_000_000:
+        return f"{ctx // 1_000_000}M"
+    return f"{ctx // 1_000}K"
+
+
+def _select_model_interactive() -> Optional[str]:
+    """Show a paginated model picker populated from the provider API.
+
+    Fetches the model list using the currently configured credentials.
+    Falls back to a manual text prompt if the API call fails.
+
+    Returns:
+        The selected model id, or None if the user cancels.
+    """
+    from ..core.ai import list_available_models
+
+    print(f"{Colors.CYAN}Fetching available models...{Colors.RESET}", end="", flush=True)
+    models: List[dict] = list_available_models()
+    print()
+
+    if not models:
+        print(
+            f"{Colors.YELLOW}Could not fetch model list "
+            f"(check OPENAI.key and OPENAI.baseURL).{Colors.RESET}"
+        )
+        print()
+        typed: str = input(f"{Colors.WHITE}Enter model name: {Colors.RESET}").strip()
+        return typed or None
+
+    current_model: Optional[str] = get_config_value("OPENAI.model")
+    total: int = len(models)
+    total_pages: int = (total + _MODEL_PAGE_SIZE - 1) // _MODEL_PAGE_SIZE
+    page: int = 0
+
+    while True:
+        clear_screen()
+        start: int = page * _MODEL_PAGE_SIZE
+        page_models: List[dict] = models[start : start + _MODEL_PAGE_SIZE]
+
+        print_header(f"SELECT MODEL  (page {page + 1}/{total_pages}  —  {total} models)")
+        print()
+
+        id_col: int = min(max((len(m["id"]) for m in page_models), default=20), 45)
+        print(
+            f"  {'#':>2}  {Colors.WHITE}{'Model':<{id_col}}{Colors.RESET}"
+            f"  {Colors.CYAN}{'Context':>7}{Colors.RESET}"
+            f"  {'Provider':<14}  Free"
+        )
+        print(f"  {'─' * (id_col + 36)}")
+
+        for i, m in enumerate(page_models, 1):
+            mid: str = m["id"]
+            display: str = mid if len(mid) <= id_col else mid[: id_col - 2] + ".."
+            ctx_str: str = _format_ctx(m["context_window"])
+            owner: str = (m["owned_by"] or "")[:14]
+            marker: str = (
+                f"{Colors.GREEN}→ {Colors.RESET}" if mid == current_model else "  "
+            )
+            free_val: Optional[bool] = m.get("is_free")
+            if free_val is True:
+                free_str: str = f"{Colors.GREEN}Yes{Colors.RESET}"
+            elif free_val is False:
+                free_str = "No "
+            else:
+                free_str = "-  "
+            print(
+                f"{marker}{i:>2}  {Colors.WHITE}{display:<{id_col}}{Colors.RESET}"
+                f"  {Colors.CYAN}{ctx_str:>7}{Colors.RESET}"
+                f"  {owner:<14}  {free_str}"
+            )
+
+        print()
+        nav: List[str] = []
+        if page < total_pages - 1:
+            nav.append("[n] Next")
+        if page > 0:
+            nav.append("[p] Prev")
+        nav.append("[m] Type manually")
+        nav.append("[0] Cancel")
+        print(f"  {Colors.WHITE}{'  '.join(nav)}{Colors.RESET}")
+        print()
+
+        try:
+            sel: str = input(f"{Colors.WHITE}Select: {Colors.RESET}").strip().lower()
+        except KeyboardInterrupt:
+            return None
+
+        if sel in ("0", ""):
+            return None
+        elif sel == "n" and page < total_pages - 1:
+            page += 1
+        elif sel == "p" and page > 0:
+            page -= 1
+        elif sel == "m":
+            typed = input(f"{Colors.WHITE}Enter model name: {Colors.RESET}").strip()
+            return typed or None
+        elif sel.isdigit():
+            idx: int = int(sel) - 1
+            if 0 <= idx < len(page_models):
+                return page_models[idx]["id"]
+            print(f"{Colors.RED}Invalid selection.{Colors.RESET}")
+
+
 def _detect_provider(base_url: Optional[str]) -> str:
     """Infer the AI provider name from its base URL.
 
@@ -74,6 +184,35 @@ def run_config_menu() -> None:
         print_header("CURRENT CONFIGURATION")
         print()
 
+        # ── AI integration summary (derived from config) ──────────────────
+        ai_key: Optional[str] = get_config_value("OPENAI.key")
+        ai_url: Optional[str] = get_config_value("OPENAI.baseURL")
+        ai_model: Optional[str] = get_config_value("OPENAI.model")
+
+        provider: str = _detect_provider(ai_url)
+        provider_color: str = Colors.GREEN if ai_key else Colors.YELLOW
+        provider_label: str = provider if ai_key else "Not configured"
+
+        print(f"{Colors.CYAN}AI:{Colors.RESET}")
+        print(
+            f"  {Colors.WHITE}Proveedor actual:      {Colors.RESET}"
+            f"{provider_color}{provider_label}{Colors.RESET}"
+        )
+        print(
+            f"  {Colors.WHITE}Proveedores disponibles:{Colors.RESET}"
+            f" {Colors.YELLOW}Groq{Colors.RESET}"
+            f" · {Colors.YELLOW}OpenRouter{Colors.RESET}"
+            f" · {Colors.YELLOW}OpenAI{Colors.RESET}"
+            f" · {Colors.YELLOW}Custom{Colors.RESET}"
+        )
+        if ai_model:
+            print(
+                f"  {Colors.WHITE}Modelo activo:         {Colors.RESET}"
+                f"{Colors.GREEN}{ai_model}{Colors.RESET}"
+            )
+        print()
+
+        # ── Raw stored configuration ──────────────────────────────────────
         config: dict = load_config()
 
         if not config:
@@ -162,19 +301,13 @@ def run_config_menu() -> None:
                 print(f"{Colors.GREEN}✓ Base URL saved{Colors.RESET}")
 
         elif choice == "3":
-            print(f"{Colors.CYAN}Groq models:{Colors.RESET}")
-            print(f"  - llama-3.3-70b-versatile (recommended for Groq)")
-            print(f"  - mixtral-8x7b-32768")
-            print(f"  - gemma2-9b-it")
-            print(f"{Colors.CYAN}OpenRouter models:{Colors.RESET}")
-            print(f"  - meta-llama/llama-3.3-70b-instruct (recommended for OpenRouter)")
-            print(f"  - google/gemini-flash-1.5")
-            print(f"  - anthropic/claude-3-haiku")
-            print(f"  - openai/gpt-4o-mini")
-            new_model: str = input(f"{Colors.WHITE}Enter model: {Colors.RESET}").strip()
-            if new_model:
-                set_config_value("OPENAI.model", new_model)
-                print(f"{Colors.GREEN}✓ Model saved{Colors.RESET}")
+            selected_model: Optional[str] = _select_model_interactive()
+            if selected_model:
+                set_config_value("OPENAI.model", selected_model)
+                clear_screen()
+                print_header("CONFIGURE AI (Groq/OpenRouter/OpenAI)")
+                print()
+                print(f"{Colors.GREEN}✓ Model saved: {selected_model}{Colors.RESET}")
 
         elif choice == "4":
             print()
