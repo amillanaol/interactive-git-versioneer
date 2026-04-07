@@ -613,7 +613,6 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
 
         # Recalcular valores cada vez para reflejar cambios
         current_untagged = get_untagged_commits(repo)
-        current_last_tag = get_last_tag(repo)
 
         # Dashboard de estado con separadores horizontales
         print(
@@ -634,14 +633,15 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
                 f"  {Colors.YELLOW}●{Colors.RESET} {Colors.WHITE}Commits:{Colors.RESET} {Colors.YELLOW}{len(current_untagged)} pendiente(s) por etiquetar{Colors.RESET}"
             )
 
-        # Versión actual
-        if current_last_tag:
+        # Versión actual (del pyproject.toml)
+        current_version = __version__
+        if current_version and current_version != "unknown":
             print(
-                f"  {Colors.CYAN}●{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.CYAN}{current_last_tag}{Colors.RESET}"
+                f"  {Colors.CYAN}●{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.CYAN}v{current_version}{Colors.RESET}"
             )
         else:
             print(
-                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.YELLOW}(sin versionado previo){Colors.RESET}"
+                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.YELLOW}(sin versionado){Colors.RESET}"
             )
 
         # Estado del changelog
@@ -654,33 +654,34 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
                 match = re.search(r"##\s*\[([^\]]+)\]", content)
                 if match:
                     last_changelog_version = match.group(1)
-                    if last_changelog_version == current_last_tag:
+                    if last_changelog_version == f"v{current_version}":
                         print(
-                            f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.GREEN}Sincronizado ({last_changelog_version}){Colors.RESET}"
+                            f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.GREEN}Sincronizado (v{current_version}){Colors.RESET}"
                         )
                     else:
                         print(
-                            f"  {Colors.YELLOW}●{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}Desincronizado{Colors.RESET}"
+                            f"  {Colors.YELLOW}⚠{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}Desactualizado ({last_changelog_version}){Colors.RESET}"
                         )
+                else:
+                    print(
+                        f"  {Colors.YELLOW}⚠{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}Sin versiones{Colors.RESET}"
+                    )
             except Exception:
-                print(
-                    f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}(error al leer){Colors.RESET}"
-                )
+                pass
         else:
             print(
-                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}(no existe){Colors.RESET}"
+                f"  {Colors.YELLOW}⚠{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}No encontrado{Colors.RESET}"
             )
 
         print(
             f"{Colors.CYAN}────────────────────────────────────────────────────────────{Colors.RESET}"
         )
-        print()
 
     def get_footer_status() -> str:
         """Retorna el string de estado para el footer del menú."""
         from .. import __version__
 
-        version_label = get_last_tag(repo) or __version__
+        version_label = __version__
         if not version_label.startswith("v"):
             version_label = f"v{version_label}"
         try:
