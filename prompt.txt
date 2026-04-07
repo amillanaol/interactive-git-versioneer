@@ -1,0 +1,26 @@
+Generate a concise git commit message based on the following diff.
+
+Rules:
+- Maximum {maxLength} characters for the subject line
+- Use imperative mood (e.g., "Add", "Fix", "Update", "Remove", "Refactor")
+- No emojis, no decorations, no special characters
+- No period at the end of the subject line
+- Be specific about what changed, not why
+- Use lowercase after the type prefix
+- Language: {locale}
+
+Format: {type}
+
+If conventional commits format is required, use this structure:
+type(scope): description
+
+Where type is one of:
+- feat: new feature
+- fix: bug fix
+- docs: documentation changes
+- style: formatting, no code change
+- refactor: code restructuring
+- test: adding or updating tests
+- chore: maintenance tasks
+
+Output only the commit message. No explanations, no alternatives, no additional text.

@@ -1,0 +1,48 @@
+Generate a comprehensive git tag message (release note) based on the following commit.
+
+Rules:
+- Maximum {maxLength} characters for the subject line
+- Use imperative mood (e.g., "Add", "Fix", "Update", "Remove", "Refactor")
+- No emojis, no decorations, no special characters (except colons for conventional commits)
+- No period at the end of the subject line
+- Be specific about what changed, not why
+- Use lowercase after the type prefix
+- Language: {locale}
+
+Format: {type}
+
+For the tag message, generate a {detailLevel} detailed message:
+
+If detailLevel is "concise":
+- Just the conventional commit format: type(scope): description
+- Example: "feat(ui): add dark mode toggle"
+
+If detailLevel is "detailed":
+- Conventional commit as subject line
+- Add a short body (1-2 lines) explaining what changed specifically
+- Example:
+  feat(ui): add dark mode toggle
+  Implements theme switching with system preference detection
+
+If detailLevel is "comprehensive":
+- Conventional commit as subject line
+- Add a detailed body explaining the change, why it matters, and what files were affected
+- Include any breaking changes or migration notes if applicable
+- Example:
+  feat(ui): add dark mode toggle
+  Implements automatic theme switching based on system preferences.
+  Supports manual override and persists user choice to localStorage.
+  Affects: src/ui/theme.ts, src/ui/components/Header.tsx
+
+Conventional commit types:
+- feat: new feature
+- fix: bug fix
+- docs: documentation changes
+- style: formatting, no code change
+- refactor: code restructuring
+- test: adding or updating tests
+- chore: maintenance tasks
+- perf: performance improvements
+- ci: CI/CD changes
+
+Output only the tag message. No explanations, no alternatives, no additional text.

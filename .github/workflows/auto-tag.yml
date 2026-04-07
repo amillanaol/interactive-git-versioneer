@@ -1,0 +1,37 @@
+name: interactive-git-versioneer Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Configure API
+        run: |
+          python -m interactive_git_versioneer.main config set OPENAI.key "${{ secrets.GROQ_API_KEY }}"
+          python -m interactive_git_versioneer.main config set OPENAI.baseURL "https://api.groq.com/openai/v1"
+          python -m interactive_git_versioneer.main config set OPENAI.model "llama-3.3-70b-versatile"
+
+      - name: Dry run (validate)
+        run: python -m interactive_git_versioneer.main tag --auto --dry-run
+
+      - name: Create and push tags
+        if: success()
+        run: python -m interactive_git_versioneer.main tag --auto --push
