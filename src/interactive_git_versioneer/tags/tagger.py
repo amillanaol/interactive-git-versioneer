@@ -222,13 +222,12 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
 
     def show_tags_status():
         """Muestra el estado actual de tags de forma concisa y amigable."""
-        last_tag = get_last_tag(repo)
-        local_count = len(list(repo.tags))
+        # Obtener repo fresco para ver datos actualizados
+        import git
 
-        # Verificar si hay cambios sin commitear
-        is_dirty = repo.is_dirty()
-        if is_dirty:
-            print(f"  {Colors.YELLOW}⚠ Hay cambios sin commitear{Colors.RESET}")
+        fresh_repo = git.Repo(repo.working_dir)
+        last_tag = get_last_tag(fresh_repo)
+        local_count = len(list(fresh_repo.tags))
 
         if last_tag:
             print(
@@ -237,15 +236,15 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
 
             # Verificar si el último commit tiene tag
             try:
-                head_commit = repo.head.commit
-                tag_obj = repo.tags[last_tag]
+                head_commit = fresh_repo.head.commit
+                tag_obj = fresh_repo.tags[last_tag]
                 if tag_obj.commit.hexsha == head_commit.hexsha:
                     commit_msg = head_commit.message.split(chr(10))[0][:35]
                     print(
                         f"{Colors.WHITE}  Commit:{Colors.RESET} {Colors.GREEN}✓{Colors.RESET} al día"
                     )
                 else:
-                    untagged = len(get_untagged_commits(repo))
+                    untagged = len(get_untagged_commits(fresh_repo))
                     print(
                         f"{Colors.WHITE}  Commit:{Colors.RESET} {Colors.YELLOW}● {untagged} sin etiquetar{Colors.RESET}"
                     )
