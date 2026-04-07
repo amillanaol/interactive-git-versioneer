@@ -42,8 +42,10 @@ def get_changelog_for_tag(repo: Repo, tag_name: str) -> Optional[str]:
             content = f.read()
 
         # Buscar la sección del tag específico
-        # Formato: ## [vX.X.X] - YYYY-MM-DD
-        pattern = rf"##\s*\[{re.escape(tag_name)}\][^\n]*\n(.*?)(?=##\s*\[|---|\Z)"
+        # El formato puede tener dos variantes:
+        # 1. ## [vX.X.X] - YYYY-MM-DD\n## [vX.X.X]\ncontent
+        # 2. ## [vX.X.X]\ncontent
+        pattern = rf"##\s*\[{re.escape(tag_name)}\](?:[^\n]*\n)(?:#+\s*\[{re.escape(tag_name)}\][^\n]*\n)?(.*?)(?=##\s*\[|---|\Z)"
         match = re.search(pattern, content, re.DOTALL)
 
         if match:
