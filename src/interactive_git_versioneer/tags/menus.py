@@ -241,9 +241,12 @@ def run_commits_submenu(
     Returns:
         bool: False para permanecer en el menú de tags
     """
+    is_dirty = repo.is_dirty()
 
     def show_commits_status():
         """Muestra el estado actual de commits."""
+        if is_dirty:
+            print(f"  {Colors.YELLOW}⚠ Hay cambios sin commitear{Colors.RESET}")
         print(f"{Colors.WHITE}Commits sin etiquetar: {len(commits)}{Colors.RESET}")
         processed_count = len([c for c in commits if c.version_type])
         print(
