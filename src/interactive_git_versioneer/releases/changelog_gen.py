@@ -236,6 +236,10 @@ def generate_changelog_from_tag_message(repo: Repo, tag_name: str) -> str:
         str: The formatted changelog entry based on the tag message.
     """
     try:
+        # Ensure tag_name starts with 'v'
+        if not tag_name.startswith("v"):
+            tag_name = f"v{tag_name}"
+
         # Get the tag object
         tag = repo.tags[tag_name]
 
@@ -268,15 +272,16 @@ def generate_changelog_from_tag_message(repo: Repo, tag_name: str) -> str:
             cleaned_lines.append(line)
 
         if not cleaned_lines:
-            return "No description available."
+            return f"## [{tag_name}]\nNo description available."
 
-        # Format as changelog entry
+        # Format as changelog entry with version header
+        result = f"## [{tag_name}]\n"
+
         # If there's only one line, use it as-is
         if len(cleaned_lines) == 1:
-            return cleaned_lines[0]
+            return result + cleaned_lines[0]
 
         # If there are multiple lines, format them
-        result_lines = []
         for i, line in enumerate(cleaned_lines):
             # If line starts with a conventional commit prefix, format as bullet
             if any(
@@ -292,18 +297,18 @@ def generate_changelog_from_tag_message(repo: Repo, tag_name: str) -> str:
                     "perf:",
                 ]
             ):
-                result_lines.append(f"- {line}")
+                result += f"- {line}\n"
             elif i == 0:
                 # First line is the main description
-                result_lines.append(line)
+                result += f"{line}\n"
             else:
                 # Subsequent lines are additional details
-                result_lines.append(f"- {line}")
+                result += f"- {line}\n"
 
-        return "\n".join(result_lines) if result_lines else cleaned_lines[0]
+        return result.strip()
 
     except Exception as e:
-        return f"Error extracting tag message: {e}"
+        return f"## [{tag_name}]\nError extracting tag message: {e}"
 
 
 def summarize_changelog_with_ai(raw_changelog_text: str, locale: str = "es") -> str:
