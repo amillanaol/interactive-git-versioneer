@@ -117,7 +117,7 @@ def show_commit_submenu(
 
             display_message = commit.custom_message or commit.message
             print(
-                f"Commit: {Colors.CYAN}{commit.hash[:7]} - {display_message}{Colors.RESET}"
+                f"Commit con etiqueta: {Colors.CYAN}{commit.hash[:7]} - {display_message}{Colors.RESET}"
             )
             print()
             print(f"{Colors.WHITE}1. Ver detalles completos{Colors.RESET}")
