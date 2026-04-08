@@ -260,7 +260,7 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
                 tag_obj = fresh_repo.tags[last_tag] if last_tag else None
                 if tag_obj and tag_obj.commit.hexsha == head_commit.hexsha:
                     print(
-                        f"{Colors.WHITE}  Commit:{Colors.RESET} {Colors.GREEN}✓{Colors.RESET} al día"
+                        f"{Colors.WHITE}  Commit con etiqueta:{Colors.RESET} {Colors.GREEN}✓{Colors.RESET} al día"
                     )
                 else:
                     untagged = len(get_untagged_commits(fresh_repo))
