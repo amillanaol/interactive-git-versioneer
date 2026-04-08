@@ -219,6 +219,11 @@ def run_modify_tag_submenu(repo):
 
 def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
     """Muestra el submenú para la gestión de tags."""
+    # Recalcular commits sin etiquetar al entrar
+    import git
+
+    fresh_repo = git.Repo(repo.working_dir)
+    untagged_commits = get_untagged_commits(fresh_repo)
 
     def show_tags_status():
         """Muestra el estado actual de tags de forma concisa y amigable."""
@@ -226,33 +231,26 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
 
         fresh_repo = git.Repo(repo.working_dir)
 
-        # Versión actual desde pyproject.toml
-        from .. import __version__
+        # Versión actual desde el último tag en git
+        last_tag = get_last_tag(fresh_repo)
 
-        current_version = __version__ if __version__ != "unknown" else None
-
-        if current_version:
-            # Verificar si hay release en GitHub
+        if last_tag:
+            # Verificar si hay release en GitHub para ese tag
             has_release = False
             try:
                 from ..releases.gh_releases import check_release_exists
 
-                tag_name = (
-                    f"v{current_version}"
-                    if not current_version.startswith("v")
-                    else current_version
-                )
-                has_release = check_release_exists(tag_name)
+                has_release = check_release_exists(last_tag)
             except Exception:
                 pass
 
             if has_release:
                 print(
-                    f"{Colors.WHITE}  Versión actual:{Colors.RESET} {Colors.GREEN}v{current_version}{Colors.RESET} {Colors.CYAN}✓ Release{Colors.RESET}"
+                    f"{Colors.WHITE}  Versión actual:{Colors.RESET} {Colors.GREEN}{last_tag}{Colors.RESET} {Colors.CYAN}✓ Release{Colors.RESET}"
                 )
             else:
                 print(
-                    f"{Colors.WHITE}  Versión actual:{Colors.RESET} {Colors.YELLOW}v{current_version}{Colors.RESET} {Colors.YELLOW}○ Sin release{Colors.RESET}"
+                    f"{Colors.WHITE}  Versión actual:{Colors.RESET} {Colors.YELLOW}{last_tag}{Colors.RESET} {Colors.YELLOW}○ Sin release{Colors.RESET}"
                 )
 
             # Verificar si el último commit tiene tag
