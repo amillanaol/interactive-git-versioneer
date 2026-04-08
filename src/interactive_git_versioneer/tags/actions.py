@@ -196,6 +196,16 @@ def apply_tags(
         if error_count > 0:
             print(f"Errores: {Colors.RED}{error_count}{Colors.RESET}")
 
+    # Mostrar lista de tags creados con sus commits
+    if success_count > 0:
+        print()
+        print(f"{Colors.WHITE}Detalle de etiquetas creadas:{Colors.RESET}")
+        for commit in processed_commits:
+            next_ver = commit_to_version[commit.hash]
+            print(
+                f"  {Colors.CYAN}{next_ver}{Colors.RESET} ← {Colors.WHITE}{commit.hash[:7]}{Colors.RESET} {commit.message[:40]}"
+            )
+
     print()
 
     if push and not dry_run and success_count > 0:
