@@ -222,24 +222,45 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
 
     def show_tags_status():
         """Muestra el estado actual de tags de forma concisa y amigable."""
-        # Obtener repo fresco para ver datos actualizados
         import git
 
         fresh_repo = git.Repo(repo.working_dir)
-        last_tag = get_last_tag(fresh_repo)
-        local_count = len(list(fresh_repo.tags))
 
-        if last_tag:
-            print(
-                f"{Colors.WHITE}  Actual:{Colors.RESET} {Colors.GREEN}{last_tag}{Colors.RESET}"
-            )
+        # Versión actual desde pyproject.toml
+        from .. import __version__
+
+        current_version = __version__ if __version__ != "unknown" else None
+
+        if current_version:
+            # Verificar si hay release en GitHub
+            has_release = False
+            try:
+                from ..releases.gh_releases import check_release_exists
+
+                tag_name = (
+                    f"v{current_version}"
+                    if not current_version.startswith("v")
+                    else current_version
+                )
+                has_release = check_release_exists(tag_name)
+            except Exception:
+                pass
+
+            if has_release:
+                print(
+                    f"{Colors.WHITE}  Versión actual:{Colors.RESET} {Colors.GREEN}v{current_version}{Colors.RESET} {Colors.CYAN}✓ Release{Colors.RESET}"
+                )
+            else:
+                print(
+                    f"{Colors.WHITE}  Versión actual:{Colors.RESET} {Colors.YELLOW}v{current_version}{Colors.RESET} {Colors.YELLOW}○ Sin release{Colors.RESET}"
+                )
 
             # Verificar si el último commit tiene tag
             try:
+                last_tag = get_last_tag(fresh_repo)
                 head_commit = fresh_repo.head.commit
-                tag_obj = fresh_repo.tags[last_tag]
-                if tag_obj.commit.hexsha == head_commit.hexsha:
-                    commit_msg = head_commit.message.split(chr(10))[0][:35]
+                tag_obj = fresh_repo.tags[last_tag] if last_tag else None
+                if tag_obj and tag_obj.commit.hexsha == head_commit.hexsha:
                     print(
                         f"{Colors.WHITE}  Commit:{Colors.RESET} {Colors.GREEN}✓{Colors.RESET} al día"
                     )
@@ -480,8 +501,19 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
             wait_for_enter()
             return False
         sorted_commits = sorted(untagged_commits, key=lambda c: c.datetime)
+
+        # Usar repo directamente, no reasignar
         auto_generate_all_with_ai(repo, sorted_commits)
-        untagged_commits = get_untagged_commits(repo)
+
+        # Recargar repo para ver los tags actualizados
+        import git
+
+        fresh_repo = git.Repo(repo.working_dir)
+        untagged_commits = get_untagged_commits(fresh_repo)
+
+        # Mostrar estado actualizado antes de esperar
+        print()
+        show_tags_status()
         wait_for_enter()
         return False
 
@@ -632,18 +664,13 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
                 f"  {Colors.YELLOW}●{Colors.RESET} {Colors.WHITE}Commits:{Colors.RESET} {Colors.YELLOW}{len(current_untagged)} pendiente(s) por etiquetar{Colors.RESET}"
             )
 
-        # Versión actual (del pyproject.toml)
-        current_version = __version__
-        if current_version and current_version != "unknown":
-            print(
-                f"  {Colors.CYAN}●{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.CYAN}v{current_version}{Colors.RESET}"
-            )
-        else:
-            print(
-                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.YELLOW}(sin versionado){Colors.RESET}"
-            )
+        # Versión actual (del pyproject.toml con indicador de release y changelog)
+        from .. import __version__
 
-        # Estado del changelog
+        current_version = __version__ if __version__ != "unknown" else None
+        changelog_version = None
+
+        # Verificar estado del changelog
         repo_root = repo.working_dir
         changelog_path = os.path.join(repo_root, "CHANGELOG.md")
         if os.path.exists(changelog_path):
@@ -652,24 +679,46 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
                     content = f.read()
                 match = re.search(r"##\s*\[([^\]]+)\]", content)
                 if match:
-                    last_changelog_version = match.group(1)
-                    if last_changelog_version == f"v{current_version}":
-                        print(
-                            f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.GREEN}Sincronizado (v{current_version}){Colors.RESET}"
-                        )
-                    else:
-                        print(
-                            f"  {Colors.YELLOW}⚠{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}Desactualizado ({last_changelog_version}){Colors.RESET}"
-                        )
-                else:
-                    print(
-                        f"  {Colors.YELLOW}⚠{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}Sin versiones{Colors.RESET}"
-                    )
+                    changelog_version = match.group(1)
             except Exception:
                 pass
+
+        if current_version:
+            # Verificar si hay release en GitHub
+            has_release = False
+            try:
+                from ..releases.gh_releases import check_release_exists
+
+                tag_name = (
+                    f"v{current_version}"
+                    if not current_version.startswith("v")
+                    else current_version
+                )
+                has_release = check_release_exists(tag_name)
+            except Exception:
+                pass
+
+            # Determinar indicadores
+            release_indicator = (
+                f"{Colors.GREEN}✓ Release{Colors.RESET}"
+                if has_release
+                else f"{Colors.YELLOW}○ Sin release{Colors.RESET}"
+            )
+
+            changelog_indicator = ""
+            version_to_check = f"v{current_version}" if current_version else None
+            if changelog_version:
+                if version_to_check and changelog_version == version_to_check:
+                    changelog_indicator = f"{Colors.GREEN} ✓ Changelog OK{Colors.RESET}"
+                else:
+                    changelog_indicator = f"{Colors.YELLOW} ⚠ Desactualizado ({changelog_version}){Colors.RESET}"
+
+            print(
+                f"  {Colors.CYAN}●{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.CYAN}v{current_version}{Colors.RESET} {release_indicator}{changelog_indicator}"
+            )
         else:
             print(
-                f"  {Colors.YELLOW}⚠{Colors.RESET} {Colors.WHITE}Changelog:{Colors.RESET} {Colors.YELLOW}No encontrado{Colors.RESET}"
+                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.YELLOW}(sin versionado){Colors.RESET}"
             )
 
         print(
