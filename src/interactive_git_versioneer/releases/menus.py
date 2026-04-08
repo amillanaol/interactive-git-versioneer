@@ -122,40 +122,34 @@ def run_changelog_submenu(repo: git.Repo) -> bool:
             except Exception:
                 pass
 
-        # Calcular changelogs pendientes
-        # Si existe entrada "Unreleased", los commits sin tag ya están documentados
-        # y no cuentan como pendientes
+        # Calcular changelogs en archivo vs tags
+        # Los commits sin tag son responsabilidad del menú de tags, no de changelogs
         pending_tags = (
             total_tags - total_changelogs_in_file
             if total_tags > total_changelogs_in_file
             else 0
         )
-        pending_untagged = 0 if has_unreleased_entry else num_untagged
-        total_pending = pending_tags + pending_untagged
-        # Total esperado: tags actuales + commits sin tag (solo si no hay Unreleased)
-        total_expected = total_tags + pending_untagged
-
-        # El changelog está completo si no hay tags pendientes
-        # (los commits sin tag cubiertos por Unreleased no son "pendientes")
-        is_complete = total_pending == 0
+        is_complete = pending_tags == 0
 
         # Mostrar changelogs registrados primero
+        # El mensaje ahora refleja que es el archivo vs tags, no "pendientes"
         if total_changelogs_in_file > 0:
             if is_complete:
                 print(
-                    f"{Colors.WHITE}Changelogs registrados: {total_changelogs_in_file}/{total_expected} {Colors.GREEN}✓ completo{Colors.RESET}"
+                    f"{Colors.WHITE}Changelogs en archivo: {total_changelogs_in_file}/{total_tags} {Colors.GREEN}✓ sincronizado con tags{Colors.RESET}"
                 )
-            elif total_pending > 0:
+            elif total_changelogs_in_file < total_tags:
+                missing_count = total_tags - total_changelogs_in_file
                 print(
-                    f"{Colors.WHITE}Changelogs registrados: {total_changelogs_in_file}/{total_expected} {Colors.YELLOW}⚠ {total_pending} pendiente(s){Colors.RESET}"
+                    f"{Colors.WHITE}Changelogs en archivo: {total_changelogs_in_file}/{total_tags} {Colors.YELLOW}⚠ {missing_count} sin registrar en archivo{Colors.RESET}"
                 )
             else:
                 print(
-                    f"{Colors.WHITE}Changelogs registrados: {total_changelogs_in_file}/{total_expected} {Colors.YELLOW}⚠ incompleto{Colors.RESET}"
+                    f"{Colors.WHITE}Changelogs en archivo: {total_changelogs_in_file}/{total_tags} {Colors.GREEN}✓ completo{Colors.RESET}"
                 )
         else:
             print(
-                f"{Colors.WHITE}Changelogs registrados: 0/{total_expected} {Colors.YELLOW}⚠ {total_expected} pendiente(s){Colors.RESET}"
+                f"{Colors.WHITE}Changelogs en archivo: 0/{total_tags} {Colors.YELLOW}⚠ sin registros{Colors.RESET}"
             )
 
         # Mostrar último changelog en el archivo

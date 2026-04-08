@@ -42,10 +42,11 @@ def get_changelog_for_tag(repo: Repo, tag_name: str) -> Optional[str]:
             content = f.read()
 
         # Buscar la sección del tag específico
-        # El formato puede tener dos variantes:
+        # El formato puede tener varias variantes:
         # 1. ## [vX.X.X] - YYYY-MM-DD\n## [vX.X.X]\ncontent
         # 2. ## [vX.X.X]\ncontent
-        pattern = rf"##\s*\[{re.escape(tag_name)}\](?:[^\n]*\n)(?:#+\s*\[{re.escape(tag_name)}\][^\n]*\n)?(.*?)(?=##\s*\[|---|\Z)"
+        # 3. ## [vX.X.X] - YYYY-MM-DD\ncontent
+        pattern = rf"##\s*\[{re.escape(tag_name)}\](?:[^\n]*\n){{0,2}}(?:##\s*\[{re.escape(tag_name)}\][^\n]*\n)?(.*?)(?=##\s*\[|---|\Z)"
         match = re.search(pattern, content, re.DOTALL)
 
         if match:
@@ -56,6 +57,22 @@ def get_changelog_for_tag(repo: Repo, tag_name: str) -> Optional[str]:
         return None
     except Exception:
         return None
+
+
+def check_release_exists(tag_name: str) -> bool:
+    """Check if a release exists for a specific tag.
+
+    Args:
+        tag_name: The tag name to check.
+
+    Returns:
+        bool: True if release exists, False otherwise.
+    """
+    releases, _ = get_releases(limit=50)
+    for release in releases:
+        if release.get("tag") == tag_name:
+            return True
+    return False
 
 
 def get_releases(limit: int = 10) -> Tuple[List[Dict[str, str]], Optional[str]]:
