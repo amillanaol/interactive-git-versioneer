@@ -231,7 +231,7 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
 
         fresh_repo = git.Repo(repo.working_dir)
 
-        # Versión actual desde el último tag en git
+        # Etiqueta actual desde el último tag en git
         last_tag = get_last_tag(fresh_repo)
 
         if last_tag:
@@ -246,11 +246,11 @@ def run_tag_management_submenu(repo, untagged_commits, dry_run, push):
 
             if has_release:
                 print(
-                    f"{Colors.WHITE}  Versión actual:{Colors.RESET} {Colors.GREEN}{last_tag}{Colors.RESET} {Colors.CYAN}✓ Release{Colors.RESET}"
+                    f"{Colors.WHITE}  Etiqueta actual:{Colors.RESET} {Colors.GREEN}{last_tag}{Colors.RESET} {Colors.CYAN}✓ Release{Colors.RESET}"
                 )
             else:
                 print(
-                    f"{Colors.WHITE}  Versión actual:{Colors.RESET} {Colors.YELLOW}{last_tag}{Colors.RESET} {Colors.YELLOW}○ Sin release{Colors.RESET}"
+                    f"{Colors.WHITE}  Etiqueta actual:{Colors.RESET} {Colors.YELLOW}{last_tag}{Colors.RESET} {Colors.YELLOW}○ Sin release{Colors.RESET}"
                 )
 
             # Verificar si el último commit tiene tag
@@ -662,7 +662,7 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
                 f"  {Colors.YELLOW}●{Colors.RESET} {Colors.WHITE}Commits:{Colors.RESET} {Colors.YELLOW}{len(current_untagged)} pendiente(s) por etiquetar{Colors.RESET}"
             )
 
-        # Versión actual (del pyproject.toml con indicador de release y changelog)
+        # Etqiueta actual (del pyproject.toml con indicador de release y changelog)
         from .. import __version__
 
         current_version = __version__ if __version__ != "unknown" else None
@@ -712,11 +712,11 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
                     changelog_indicator = f"{Colors.YELLOW} ⚠ Desactualizado ({changelog_version}){Colors.RESET}"
 
             print(
-                f"  {Colors.CYAN}●{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.CYAN}v{current_version}{Colors.RESET} {release_indicator}{changelog_indicator}"
+                f"  {Colors.CYAN}●{Colors.RESET} {Colors.WHITE}Etiqueta actual:{Colors.RESET} {Colors.CYAN}v{current_version}{Colors.RESET} {release_indicator}{changelog_indicator}"
             )
         else:
             print(
-                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Versión actual:{Colors.RESET} {Colors.YELLOW}(sin versionado){Colors.RESET}"
+                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Etiqueta actual:{Colors.RESET} {Colors.YELLOW}(sin versionado){Colors.RESET}"
             )
 
         print(
