@@ -341,6 +341,13 @@ def create_github_release(repo: Repo) -> bool:
     for r in releases_list:
         existing_releases.add(r.get("tag", ""))
 
+    # Encontrar el último tag con release en GitHub para calcular el changelog
+    last_release_tag: Optional[str] = None
+    for tag in tags:
+        if tag.name in existing_releases:
+            last_release_tag = tag.name
+            break
+
     page_size: int = 10
     current_page: int = 0
     total_pages: int = (len(tags) + page_size - 1) // page_size
@@ -454,7 +461,11 @@ def create_github_release(repo: Repo) -> bool:
         ).strip()
 
         if notes_choice == "1":
-            notes = existing_changelog
+            # Generar changelog desde el último release en GitHub
+            # Esto incluye todos los cambios desde el último release publicado
+            notes = generate_changelog(repo, last_release_tag, selected_tag)
+            if not notes:
+                notes = existing_changelog  # Fallback al changelog existente
         elif notes_choice == "2":
             generate_notes_flag = True
         elif notes_choice == "3":
@@ -484,13 +495,9 @@ def create_github_release(repo: Repo) -> bool:
         notes_choice = input(f"{Colors.WHITE}Seleccione opción: {Colors.RESET}").strip()
 
         if notes_choice == "1":
-            # Find previous tag for changelog
-            prev_tag: Optional[str] = None
-            for i, tag in enumerate(tags):
-                if tag.name == selected_tag and i + 1 < len(tags):
-                    prev_tag = tags[i + 1].name
-                    break
-            notes = generate_changelog(repo, prev_tag, selected_tag)
+            # Usar el último tag con release como base para el changelog
+            # Esto incluye todos los commits desde el último release
+            notes = generate_changelog(repo, last_release_tag, selected_tag)
             if not notes:
                 print(
                     f"{Colors.YELLOW}No se encontraron commits en el rango. Se usará descripción vacía.{Colors.RESET}"
