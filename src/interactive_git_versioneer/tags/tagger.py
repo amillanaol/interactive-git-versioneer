@@ -598,23 +598,16 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
     """Ejecuta el tagger interactivo.
 
     Args:
-        dry_run: Si True, solo muestra qué haría sin ejecutar
+        dry_run: Si True, solo muestra quéaría sin ejecutar
         push: Si True, sube las etiquetas al remoto después de crearlas
 
     Returns:
         int: Código de salida (0 = éxito)
     """
-    # Limpiar pantalla al iniciar
     clear_screen()
-
-    # Obtener repositorio Git
     repo = get_git_repo()
 
-    # Obtener información inicial (ordenados del más antiguo al más nuevo)
-    untagged_commits = sorted(get_untagged_commits(repo), key=lambda c: c.datetime)
-    last_tag = get_last_tag(repo)
-
-    # Header profesional
+    # Header
     print()
     print(
         f"{Colors.CYAN}╔══════════════════════════════════════════════════════════╗{Colors.RESET}"
@@ -634,170 +627,10 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
 
     print()
 
-    # Funciones de estado y acciones para el menú principal
-    def show_main_status():
-        """Muestra el estado actual del repositorio con dashboard avanzado."""
-        import os
-        import re
-
-        # Recalcular valores cada vez para reflejar cambios
-        current_untagged = get_untagged_commits(repo)
-
-        # Dashboard de estado con separadores horizontales
-        print(
-            f"{Colors.CYAN}────────────────────────────────────────────────────────────{Colors.RESET}"
-        )
-        print(f"{Colors.WHITE}  ESTADO DEL REPOSITORIO{Colors.RESET}")
-        print(
-            f"{Colors.CYAN}────────────────────────────────────────────────────────────{Colors.RESET}"
-        )
-
-        # Commits pendientes con indicador visual
-        if len(current_untagged) == 0:
-            print(
-                f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Commits:{Colors.RESET} {Colors.GREEN}Sin pendientes{Colors.RESET}"
-            )
-        else:
-            print(
-                f"  {Colors.YELLOW}●{Colors.RESET} {Colors.WHITE}Commits:{Colors.RESET} {Colors.YELLOW}{len(current_untagged)} pendiente(s) por etiquetar{Colors.RESET}"
-            )
-
-        # Etqiueta actual (del pyproject.toml con indicador de release y changelog)
-        from .. import __version__
-
-        current_version = __version__ if __version__ != "unknown" else None
-        changelog_version = None
-
-        # Verificar estado del changelog
-        repo_root = repo.working_dir
-        changelog_path = os.path.join(repo_root, "CHANGELOG.md")
-        if os.path.exists(changelog_path):
-            try:
-                with open(changelog_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                match = re.search(r"##\s*\[([^\]]+)\]", content)
-                if match:
-                    changelog_version = match.group(1)
-            except Exception:
-                pass
-
-        if current_version:
-            # Verificar si hay release en GitHub
-            has_release = False
-            try:
-                from ..releases.gh_releases import check_release_exists
-
-                tag_name = (
-                    f"v{current_version}"
-                    if not current_version.startswith("v")
-                    else current_version
-                )
-                has_release = check_release_exists(tag_name)
-            except Exception:
-                pass
-
-            # Determinar indicadores
-            release_indicator = (
-                f"{Colors.GREEN}✓ Release{Colors.RESET}"
-                if has_release
-                else f"{Colors.YELLOW}○ Sin release{Colors.RESET}"
-            )
-
-            changelog_indicator = ""
-            version_to_check = f"v{current_version}" if current_version else None
-            if changelog_version:
-                if version_to_check and changelog_version == version_to_check:
-                    changelog_indicator = f"{Colors.GREEN} ✓ Changelog OK{Colors.RESET}"
-                else:
-                    changelog_indicator = f"{Colors.YELLOW} ⚠ Desactualizado ({changelog_version}){Colors.RESET}"
-
-            print(
-                f"  {Colors.CYAN}●{Colors.RESET} {Colors.WHITE}Etiqueta actual:{Colors.RESET} {Colors.CYAN}v{current_version}{Colors.RESET} {release_indicator}{changelog_indicator}"
-            )
-        else:
-            print(
-                f"  {Colors.YELLOW}○{Colors.RESET} {Colors.WHITE}Etiqueta actual:{Colors.RESET} {Colors.YELLOW}(sin versionado){Colors.RESET}"
-            )
-
-        print(
-            f"{Colors.CYAN}────────────────────────────────────────────────────────────{Colors.RESET}"
-        )
-
-    def get_footer_status() -> str:
-        """Retorna el string de estado para el footer del menú."""
-        from .. import __version__
-
-        version_label = __version__
-        if not version_label.startswith("v"):
-            version_label = f"v{version_label}"
-        try:
-            head_commit = repo.head.commit
-            author_email = head_commit.author.email
-            username = (
-                author_email.split("@")[0] if "@" in author_email else author_email
-            )
-            return f"{Colors.WHITE}● {username} | igv {version_label}{Colors.RESET}"
-        except Exception:
-            return f"{Colors.CYAN}● igv {version_label}{Colors.RESET}"
-
-    def action_manage_commits():
-        """Abre el submenú de gestión de commits."""
-        nonlocal untagged_commits
-        run_commits_submenu(repo, untagged_commits, dry_run, push)
-        # Recalcular commits sin etiquetar después de volver del submenú
-        untagged_commits = get_untagged_commits(repo)
-        return False
-
-    def action_open_tags_submenu():
-        """Abre el submenú de gestión de tags."""
-        nonlocal untagged_commits
-        run_tag_management_submenu(repo, untagged_commits, dry_run, push)
-        # Recalcular commits sin etiquetar después de volver del submenú
-        untagged_commits = get_untagged_commits(repo)
-        return False
-
-    def action_manage_releases():
-        """Abre el submenú de gestión de releases."""
-        run_releases_menu(repo)
-        return False
-
-    def action_manage_changelogs():
-        """Abre el submenú de generación de changelogs."""
-        run_changelog_submenu(repo)
-        return False
-
-    def action_config():
-        """Abre el submenú de configuración."""
-        run_config_menu()
-        return False
-
-    def action_exit():
-        """Sale del programa."""
-        print()
-        print(f"{Colors.YELLOW}Saliendo...{Colors.RESET}")
-        return True
-
-    # Crear y ejecutar menú principal
-    main_menu = Menu("INTERACTIVE GIT VERSIONEER")
-    main_menu.set_status_callback(show_main_status)
-    main_menu.set_footer_callback(get_footer_status)
-    main_menu.add_item(
-        "1", "Commits   → Revisar y etiquetar cambios", action_manage_commits
-    )
-    main_menu.add_item(
-        "2", "Tags      → Gestionar versiones semánticas", action_open_tags_submenu
-    )
-    main_menu.add_item(
-        "3", "Releases  → Publicar en GitHub/GitLab", action_manage_releases
-    )
-    main_menu.add_item(
-        "4", "Changelogs→ Documentar cambios del proyecto", action_manage_changelogs
-    )
-    main_menu.add_item("5", "Config    → Ajustes de API y preferencias", action_config)
-    main_menu.add_item("0", "Salir     → Cerrar aplicación", action_exit)
+    from ..main_menu.main_menu import run_main_menu
 
     try:
-        main_menu.run(is_main_menu=True)
+        run_main_menu(repo, dry_run, push)
     except KeyboardInterrupt:
         print()
         print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
@@ -819,7 +652,7 @@ def run_auto_tagger(
     y determinar tipos de versión automáticamente.
 
     Args:
-        dry_run: Si True, solo muestra qué haría sin ejecutar
+        dry_run: Si True, solo muestra quéería sin ejecutar
         push: Si True, sube las etiquetas al remoto después de crearlas
         version_type: Tipo de versión (major/minor/patch/auto)
 
