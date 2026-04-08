@@ -109,19 +109,30 @@ def run_main_menu(repo, dry_run=False, push=False) -> bool:
 
     def get_footer_status() -> str:
         """Retorna el string de estado para el footer del menú."""
-        last_tag = get_last_tag(repo)
-        version_label = last_tag or __version__
+        import tomli
+
+        # Obtener versión y autor desde pyproject.toml
+        try:
+            pyproject_path = os.path.join(repo.working_dir, "pyproject.toml")
+            with open(pyproject_path, "rb") as f:
+                pyproject = tomli.load(f)
+            project_info = pyproject.get("project", {})
+            version_from_toml = project_info.get("version", "unknown")
+            authors = project_info.get("authors", [])
+            author_name = authors[0].get("name", "unknown") if authors else "unknown"
+        except Exception:
+            version_from_toml = __version__
+            author_name = "unknown"
+
+        version_label = (
+            version_from_toml if version_from_toml != "unknown" else get_last_tag(repo)
+        )
+        if not version_label:
+            version_label = version_from_toml
         if not version_label.startswith("v"):
             version_label = f"v{version_label}"
-        try:
-            head_commit = repo.head.commit
-            author_email = head_commit.author.email
-            username = (
-                author_email.split("@")[0] if "@" in author_email else author_email
-            )
-            return f"{Colors.WHITE}● {username} | igv {version_label}{Colors.RESET}"
-        except Exception:
-            return f"{Colors.CYAN}● igv {version_label}{Colors.RESET}"
+
+        return f"{Colors.WHITE}● {author_name} | igv {version_label}{Colors.RESET}"
 
     def action_manage_commits():
         """Abre el submenú de gestión de commits."""
