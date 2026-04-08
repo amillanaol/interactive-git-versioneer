@@ -106,10 +106,8 @@ def apply_tags(
 
             if confirm != "s":
                 print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
-            print(
-                f"{Colors.WHITE}Comitee sus cambios y vuelva a intentar.{Colors.RESET}"
-            )
-            return False
+                return False
+            print()
 
         print()
 
