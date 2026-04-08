@@ -53,6 +53,9 @@ from .tagger import (
     run_interactive_tagger,
 )
 
+# Re-exportar menú principal
+from ..main_menu.main_menu import run_main_menu
+
 # Re-exportar vistas
 from .views import (
     paginate_items,
