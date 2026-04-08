@@ -450,6 +450,39 @@ def generate_tags_manual(repo: git.Repo, commits: List[Commit]) -> None:
     print(f"Procesados: {Colors.GREEN}{success_count}{Colors.RESET}")
     if skipped_count > 0:
         print(f"Saltados: {Colors.YELLOW}{skipped_count}{Colors.RESET}")
+
+    # Mostrar detalle de commits procesados
+    if success_count > 0:
+        print()
+        print(f"{Colors.WHITE}Detalle de versiones:{Colors.RESET}")
+        from ..core.git_ops import get_last_tag, parse_version
+
+        last_tag = get_last_tag(repo)
+        major, minor, patch = parse_version(last_tag) if last_tag else (0, 0, 0)
+
+        for commit in commits:
+            if not commit.processed or not commit.version_type:
+                continue
+            if getattr(commit, "custom_version", None):
+                version = commit.custom_version
+                parsed = parse_version(version)
+                if parsed:
+                    major, minor, patch = parsed
+            else:
+                if commit.version_type == "major":
+                    major += 1
+                    minor = 0
+                    patch = 0
+                elif commit.version_type == "minor":
+                    minor += 1
+                    patch = 0
+                elif commit.version_type == "patch":
+                    patch += 1
+                version = f"v{major}.{minor}.{patch}"
+            print(
+                f"  {Colors.CYAN}{version}{Colors.RESET} ← {Colors.WHITE}{commit.hash[:7]}{Colors.RESET}"
+            )
+
     print()
 
     if success_count > 0:
@@ -538,6 +571,39 @@ def generate_tags_with_commit_message(repo: git.Repo, commits: List[Commit]) -> 
     print(f"Procesados: {Colors.GREEN}{success_count}{Colors.RESET}")
     if skipped_count > 0:
         print(f"Saltados: {Colors.YELLOW}{skipped_count}{Colors.RESET}")
+
+    # Mostrar detalle de commits procesados
+    if success_count > 0:
+        print()
+        print(f"{Colors.WHITE}Detalle de versiones:{Colors.RESET}")
+        from ..core.git_ops import get_last_tag, parse_version
+
+        last_tag = get_last_tag(repo)
+        major, minor, patch = parse_version(last_tag) if last_tag else (0, 0, 0)
+
+        for commit in commits:
+            if not commit.processed or not commit.version_type:
+                continue
+            if getattr(commit, "custom_version", None):
+                version = commit.custom_version
+                parsed = parse_version(version)
+                if parsed:
+                    major, minor, patch = parsed
+            else:
+                if commit.version_type == "major":
+                    major += 1
+                    minor = 0
+                    patch = 0
+                elif commit.version_type == "minor":
+                    minor += 1
+                    patch = 0
+                elif commit.version_type == "patch":
+                    patch += 1
+                version = f"v{major}.{minor}.{patch}"
+            print(
+                f"  {Colors.CYAN}{version}{Colors.RESET} ← {Colors.WHITE}{commit.hash[:7]}{Colors.RESET}"
+            )
+
     print()
 
     if success_count > 0:
@@ -815,6 +881,40 @@ def generate_ai_tags_one_by_one(repo: git.Repo, commits: List[Commit]) -> None:
         print(f"Saltados: {Colors.YELLOW}{skipped_count}{Colors.RESET}")
     if error_count > 0:
         print(f"Errores: {Colors.RED}{error_count}{Colors.RESET}")
+
+    # Mostrar detalle de commits procesados
+    if success_count > 0:
+        print()
+        print(f"{Colors.WHITE}Detalle de versiones:{Colors.RESET}")
+        from ..core.git_ops import get_next_version, get_last_tag
+        from ..core.git_ops import parse_version
+
+        last_tag = get_last_tag(repo)
+        major, minor, patch = parse_version(last_tag) if last_tag else (0, 0, 0)
+
+        for commit in commits:
+            if not commit.processed or not commit.version_type:
+                continue
+            if getattr(commit, "custom_version", None):
+                version = commit.custom_version
+                parsed = parse_version(version)
+                if parsed:
+                    major, minor, patch = parsed
+            else:
+                if commit.version_type == "major":
+                    major += 1
+                    minor = 0
+                    patch = 0
+                elif commit.version_type == "minor":
+                    minor += 1
+                    patch = 0
+                elif commit.version_type == "patch":
+                    patch += 1
+                version = f"v{major}.{minor}.{patch}"
+            print(
+                f"  {Colors.CYAN}{version}{Colors.RESET} ← {Colors.WHITE}{commit.hash[:7]}{Colors.RESET}"
+            )
+
     print()
 
     if success_count > 0:
