@@ -313,4 +313,9 @@ Examples:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except OSError as e:
+        if "Controlador no válido" in str(e) or "invalid" in str(e).lower():
+            sys.exit(0)
+        raise
