@@ -5,7 +5,7 @@ Coordina los submenús de Tags y Releases usando el sistema de menú modular.
 """
 
 import re
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import git
 
@@ -643,16 +643,56 @@ def run_interactive_tagger(dry_run: bool = False, push: bool = False) -> int:
     return 0
 
 
+def _determine_version_type_from_commit(commit_message: str) -> Tuple[str, str]:
+    """Determina el tipo de versión basándose en Conventional Commits.
+
+    Basado en: https://www.conventionalcommits.org/
+    - feat: → minor
+    - fix: → patch
+    - BREAKING CHANGE: o tipo con ! → major
+
+    Args:
+        commit_message: Mensaje del commit
+
+    Returns:
+        Tuple[str, str]: (tipo, razón)
+    """
+    msg_lower = commit_message.lower()
+
+    if "breaking change" in msg_lower or "breaking-change" in msg_lower:
+        return ("major", "BREAKING CHANGE detectado")
+
+    if msg_lower.startswith("feat"):
+        return ("minor", "conventional commit: feat:")
+
+    if msg_lower.startswith("fix"):
+        return ("patch", "conventional commit: fix:")
+
+    if msg_lower.startswith("refactor"):
+        return ("minor", "conventional commit: refactor:")
+
+    if msg_lower.startswith("docs"):
+        return ("patch", "conventional commit: docs:")
+
+    if msg_lower.startswith("perf"):
+        return ("minor", "conventional commit: perf:")
+
+    if msg_lower.startswith("chore"):
+        return ("patch", "conventional commit: chore:")
+
+    return ("patch", "tipo por defecto (no convencional)")
+
+
 def run_auto_tagger(
     dry_run: bool = False, push: bool = False, version_type: str = "auto"
 ) -> int:
     """Ejecuta el tagger en modo automático (CI/CD).
 
-    Modo no interactivo para pipelines. Usa IA para generar mensajes
-    y determinar tipos de versión automáticamente.
+    Modo no interactivo para pipelines. Usa conventional commits por defecto,
+    o IA si está configurada.
 
     Args:
-        dry_run: Si True, solo muestra quéería sin ejecutar
+        dry_run: Si True, solo mostraría quéería sin ejecutar
         push: Si True, sube las etiquetas al remoto después de crearlas
         version_type: Tipo de versión (major/minor/patch/auto)
 
@@ -660,13 +700,103 @@ def run_auto_tagger(
         int: Código de salida (0 = éxito)
     """
     from ..config import get_config_value
-    from ..core.ai import determine_version_type
-    from .ai import generate_ai_message
 
     print("=" * 50)
     print("INTERACTIVE GIT TAGGER - MODO AUTOMÁTICO (CI/CD)")
     print("=" * 50)
     print()
+
+    if dry_run:
+        print("[MODO PRUEBA] Los comandos NO serán ejecutados")
+        print()
+
+    repo = get_git_repo()
+
+    api_key = get_config_value("OPENAI.key")
+    base_url = get_config_value("OPENAI.baseURL")
+    use_ai = bool(api_key and base_url)
+
+    if use_ai:
+        print(f"[IA] Usando IA para determinar tipos de versión")
+        from ..core.ai import determine_version_type
+        from .ai import generate_ai_message
+    else:
+        print(
+            "[CONVENTIONAL COMMITS] Modo sin IA - detectando tipos desde mensajes de commit"
+        )
+
+    print()
+
+    untagged_commits = get_untagged_commits(repo)
+    last_tag = get_last_tag(repo)
+
+    print(f"Commits sin etiquetar: {len(untagged_commits)}")
+    if last_tag:
+        print(f"Última etiqueta: {last_tag}")
+    print()
+
+    if not untagged_commits:
+        print("No hay commits sin etiquetar. Nada que hacer.")
+        return 0
+
+    ai_decides = version_type == "auto"
+    print(f"Tipo de versión: {'auto' if ai_decides else version_type.upper()}")
+    print(f"Procesando {len(untagged_commits)} commits...")
+    print()
+
+    success_count = 0
+    error_count = 0
+
+    for i, commit in enumerate(untagged_commits, 1):
+        print(
+            f"[{i}/{len(untagged_commits)}] {commit.hash[:7]} - {commit.message[:50]}"
+        )
+
+        if ai_decides:
+            if use_ai:
+                try:
+                    diff = get_commit_diff(repo, commit.hash)
+                    vtype, reason = determine_version_type(commit.message, diff)
+                    commit.version_type = vtype
+                    print(f"  → Tipo: {vtype.upper()} ({reason})")
+                except Exception as e:
+                    print(f"  → Error IA: {e}, usando conventional commits")
+                    vtype, reason = _determine_version_type_from_commit(commit.message)
+                    commit.version_type = vtype
+                    print(f"  → Tipo: {vtype.upper()} ({reason})")
+            else:
+                vtype, reason = _determine_version_type_from_commit(commit.message)
+                commit.version_type = vtype
+                print(f"  → Tipo: {vtype.upper()} ({reason})")
+        else:
+            commit.version_type = version_type
+
+        if use_ai:
+            try:
+                ai_message = generate_ai_message(repo, commit)
+                if ai_message:
+                    commit.custom_message = ai_message
+                    commit.processed = True
+                    success_count += 1
+                    print(f"  ✓ Mensaje generado")
+                else:
+                    commit.custom_message = commit.message
+                    commit.processed = True
+                    success_count += 1
+                    print(f"  → Usando mensaje original del commit")
+            except Exception as e:
+                print(f"  → Error IA: {e}, usando mensaje original")
+                commit.custom_message = commit.message
+                commit.processed = True
+                success_count += 1
+                print(f"  → Usando mensaje original del commit")
+        else:
+            commit.custom_message = commit.message
+            commit.processed = True
+            success_count += 1
+            print(f"  → Mensaje: {commit.message[:60]}...")
+
+        print()
 
     if dry_run:
         print("[MODO PRUEBA] Los comandos NO serán ejecutados")
