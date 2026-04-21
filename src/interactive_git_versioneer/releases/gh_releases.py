@@ -461,11 +461,8 @@ def create_github_release(repo: Repo) -> bool:
         ).strip()
 
         if notes_choice == "1":
-            # Generar changelog desde el último release en GitHub
-            # Esto incluye todos los cambios desde el último release publicado
-            notes = generate_changelog(repo, last_release_tag, selected_tag)
-            if not notes:
-                notes = existing_changelog  # Fallback al changelog existente
+            # Usar el changelog existente del CHANGELOG.md
+            notes = existing_changelog
         elif notes_choice == "2":
             generate_notes_flag = True
         elif notes_choice == "3":
