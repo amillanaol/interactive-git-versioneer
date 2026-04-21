@@ -388,7 +388,7 @@ def auto_generate_all_with_ai(repo: git.Repo, commits: List[Commit]) -> None:
 
 def generate_tags_manual(repo: git.Repo, commits: List[Commit]) -> None:
     """Genera tags manualmente sin IA, usando mensaje del commit."""
-    from ..core.git_ops import get_next_version
+    from ..core.git_ops import get_last_tag, parse_version
 
     commits = sorted(commits, key=lambda c: c.datetime)
 
@@ -397,6 +397,9 @@ def generate_tags_manual(repo: git.Repo, commits: List[Commit]) -> None:
         f"{Colors.CYAN}Procesando {len(commits)} commits manualmente...{Colors.RESET}"
     )
     print()
+
+    last_tag = get_last_tag(repo)
+    major, minor, patch = parse_version(last_tag) if last_tag else (0, 0, 0)
 
     success_count = 0
     skipped_count = 0
@@ -438,7 +441,17 @@ def generate_tags_manual(repo: git.Repo, commits: List[Commit]) -> None:
         commit.processed = True
         success_count += 1
 
-        next_ver = get_next_version(repo, commit.version_type)
+        if commit.version_type == "major":
+            major += 1
+            minor = 0
+            patch = 0
+        elif commit.version_type == "minor":
+            minor += 1
+            patch = 0
+        elif commit.version_type == "patch":
+            patch += 1
+        next_ver = f"v{major}.{minor}.{patch}"
+        commit.custom_version = next_ver
         print(
             f"  {Colors.GREEN}→ Tipo: {commit.version_type.upper()} | Tag: {next_ver}{Colors.RESET}"
         )
@@ -500,13 +513,16 @@ def generate_tags_manual(repo: git.Repo, commits: List[Commit]) -> None:
 
 def generate_tags_with_commit_message(repo: git.Repo, commits: List[Commit]) -> None:
     """Genera tags usando el mensaje del commit automáticamente."""
-    from ..core.git_ops import get_next_version
+    from ..core.git_ops import get_last_tag, parse_version
 
     commits = sorted(commits, key=lambda c: c.datetime)
 
     print()
     print(f"{Colors.CYAN}Procesando {len(commits)} commits...{Colors.RESET}")
     print()
+
+    last_tag = get_last_tag(repo)
+    major, minor, patch = parse_version(last_tag) if last_tag else (0, 0, 0)
 
     success_count = 0
     skipped_count = 0
@@ -526,7 +542,7 @@ def generate_tags_with_commit_message(repo: git.Repo, commits: List[Commit]) -> 
             choice = input(f"{Colors.WHITE}Seleccione: {Colors.RESET}").strip().lower()
         except KeyboardInterrupt:
             print()
-            print(f"{Colors.YELLOW}Cancelado.{Colors.RESET}")
+            print(f"{Colors.YELLOW}Operación cancelada.{Colors.RESET}")
             return
 
         if choice == "s":
@@ -548,7 +564,17 @@ def generate_tags_with_commit_message(repo: git.Repo, commits: List[Commit]) -> 
         commit.processed = True
         success_count += 1
 
-        next_ver = get_next_version(repo, commit.version_type)
+        if commit.version_type == "major":
+            major += 1
+            minor = 0
+            patch = 0
+        elif commit.version_type == "minor":
+            minor += 1
+            patch = 0
+        elif commit.version_type == "patch":
+            patch += 1
+        next_ver = f"v{major}.{minor}.{patch}"
+        commit.custom_version = next_ver
         print(
             f"  {Colors.GREEN}→ Tipo: {commit.version_type.upper()} | Tag: {next_ver}{Colors.RESET}"
         )
@@ -561,6 +587,9 @@ def generate_tags_with_commit_message(repo: git.Repo, commits: List[Commit]) -> 
             if not edit_version.startswith("v"):
                 edit_version = "v" + edit_version
             commit.custom_version = edit_version
+            parsed = parse_version(edit_version)
+            if parsed:
+                major, minor, patch = parsed
             print(f"{Colors.GREEN}  → Versión cambiada a: {edit_version}{Colors.RESET}")
 
         print()
