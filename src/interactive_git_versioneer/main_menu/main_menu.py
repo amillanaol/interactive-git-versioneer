@@ -107,22 +107,57 @@ def run_main_menu(repo, dry_run=False, push=False) -> bool:
             f"{Colors.CYAN}────────────────────────────────────────────────────────────{Colors.RESET}"
         )
 
+    def get_current_author() -> str:
+        """Obtiene el autor actual desde múltiples fuentes."""
+        # 1. Intentar desde pyproject.toml
+        try:
+            pyproject_path = os.path.join(repo.working_dir, "pyproject.toml")
+            with open(pyproject_path, "rb") as f:
+                import tomli
+
+                pyproject = tomli.load(f)
+            project_info = pyproject.get("project", {})
+            authors = project_info.get("authors", [])
+            if authors:
+                author_name = authors[0].get("name")
+                if author_name:
+                    return author_name
+        except Exception:
+            pass
+
+        # 2. Intentar desde git config global
+        try:
+            git_author = repo.git.config("--global", "user.name")
+            if git_author:
+                return git_author
+        except Exception:
+            pass
+
+        # 3. Fallback: intentar obtener del último commit
+        try:
+            commits = list(repo.iter_commits(max_count=1))
+            if commits:
+                return commits[0].author.name
+        except Exception:
+            pass
+
+        return "amillanaol"
+
     def get_footer_status() -> str:
         """Retorna el string de estado para el footer del menú."""
         import tomli
 
-        # Obtener versión y autor desde pyproject.toml
+        # Obtener versión desde pyproject.toml
         try:
             pyproject_path = os.path.join(repo.working_dir, "pyproject.toml")
             with open(pyproject_path, "rb") as f:
                 pyproject = tomli.load(f)
             project_info = pyproject.get("project", {})
             version_from_toml = project_info.get("version", "unknown")
-            authors = project_info.get("authors", [])
-            author_name = authors[0].get("name", "unknown") if authors else "unknown"
         except Exception:
             version_from_toml = __version__
-            author_name = "unknown"
+
+        author_name = get_current_author()
 
         version_label = (
             version_from_toml if version_from_toml != "unknown" else get_last_tag(repo)
