@@ -414,7 +414,15 @@ class OutputPanel(Static):
 def run_tui():
     """Entry point for TUI application"""
     app = VersioneerApp()
-    app.run()
+    try:
+        app.run()
+    except Exception:
+        raise
+    finally:
+        try:
+            app.shutdown()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
