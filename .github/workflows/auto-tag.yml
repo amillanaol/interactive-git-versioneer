@@ -23,13 +23,7 @@ jobs:
       - name: Install package
         run: pip install -e .
 
-      - name: Configure API
-        run: |
-          python -m interactive_git_versioneer.main config set OPENAI.key "${{ secrets.GROQ_API_KEY }}"
-          python -m interactive_git_versioneer.main config set OPENAI.baseURL "https://api.groq.com/openai/v1"
-          python -m interactive_git_versioneer.main config set OPENAI.model "llama-3.3-70b-versatile"
-
-      - name: Dry run (validate)
+      - name: Run auto-tagger (Conventional Commits - no API key needed)
         run: python -m interactive_git_versioneer.main tag --auto --dry-run
 
       - name: Create and push tags
