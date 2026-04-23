@@ -1,6 +1,6 @@
 # Interactive Git Versioneer con IA
 
-Interactive Git Versioneer es una herramienta open-source que automatiza flujos de versionado en Git mediante un adaptador único basado en OpenAI. Combina comandos interactivos en Node.js con modelos de IA para generar tags semánticos, changelogs inteligentes y merges optimizados, ideal para equipos DevOps. Desarrollado con Clean Architecture, soporta CI/CD y microservicios. ¡Prueba la demo y contribuye!
+Interactive Git Versioneer es una herramienta open-source que automatiza flujos de versionado en Git mediante un adaptador único basado en OpenAI. Combina comandos interactivos en Node.js con modelos de IA para generar tags semánticos, changelogs inteligentes y merges optimizados, ideal para equipos DevOps. Desarrollado con Clean Architecture, soporta CI/CD y microservicios.
 
 <!-- Badges mostly generated with https://shields.io -->
 
