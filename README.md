@@ -68,7 +68,7 @@ See more info on the [Features](/docs/modules/tagger.md) page in the docs.
 | :--- | :--- |
 | Instalar y ejecutar localmente | [docs/usuario/guia_inicio_rapido.md](docs/usuario/guia_inicio_rapido.md) |
 | Ejecutar tests | [docs/desarrollo/tests_ejecucion.md](docs/desarrollo/tests_ejecucion.md) |
-| Integracion de IA (conector OpenAI) | [docs/desarrollo/integracion_openai.md](docs/desarrollo/integracion_openai.md) |
+| Integracion de IA (conector OpenAI) | [Explicacion de integracion con openai](https://www.patreon.com/posts/156140583) |
 | Configurar proveedores de IA | [docs/referencia/configuracion_ia.md](docs/referencia/configuracion_ia.md) |
 | Modelos Ollama recomendados | [docs/configuracion/modelos_ollama.md](docs/configuracion/modelos_ollama.md) |
 | Referencia de comandos CLI | [docs/referencia/comandos.md](docs/referencia/comandos.md) |
