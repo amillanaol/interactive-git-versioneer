@@ -147,10 +147,6 @@ igv tag --auto --push
 
 Ver [docs/desarrollo/tests_ejecucion.md](docs/desarrollo/tests_ejecucion.md) para más información.
 
-## Contributing
-
-See the [Contributing](/CONTRIBUTING.md) guide.
-
 
 ## License
 
