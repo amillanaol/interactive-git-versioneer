@@ -10,7 +10,11 @@ Este documento explica cómo Integrated Git Versioneer (IGV) integra servicios d
 
 El diseño sigue el principio de **inversión de dependencias**: el núcleo de dominio define qué necesita (el "puerto"), y la capa de infraestructura provee cómo implementarlo ("adaptador").
 
-![[Arquitectura General.png]]
+<div align="center">
+    <img src="https://raw.githubusercontent.com/amillanaol/interactive-git-versioneer/refs/heads/main/docs/desarrollo/assets/Arquitectura%20General.png"
+        alt="IGV Demo"
+        width="700" />
+</div>
 
 ---
 
@@ -392,7 +396,11 @@ def list_ollama_models() -> list:
 
 ## 9. Resumen de Arquitectura
 
-![[Resumen de Arquitectura.png]]
+<div align="center">
+    <img src="https://raw.githubusercontent.com/amillanaol/interactive-git-versioneer/refs/heads/main/docs/desarrollo/assets/Resumen%20de%20Arquitectura.png"
+        alt="IGV Demo"
+        width="500" />
+</div>
 
 ---
 
