@@ -67,6 +67,7 @@ See more info on the [Features](/docs/modules/tagger.md) page in the docs.
 | Necesidad | Ubicacion |
 | :--- | :--- |
 | Instalar y ejecutar localmente | [docs/usuario/guia_inicio_rapido.md](docs/usuario/guia_inicio_rapido.md) |
+| Ejecutar tests | [docs/desarrollo/tests_ejecucion.md](docs/desarrollo/tests_ejecucion.md) |
 | Configurar proveedores de IA | [docs/referencia/configuracion_ia.md](docs/referencia/configuracion_ia.md) |
 | Modelos Ollama recomendados | [docs/configuracion/modelos_ollama.md](docs/configuracion/modelos_ollama.md) |
 | Referencia de comandos CLI | [docs/referencia/comandos.md](docs/referencia/comandos.md) |
@@ -145,22 +146,9 @@ igv tag --auto --push
 
 ## Tests
 
-> **Nota:** Los tests unitarios y de integracion se han trasladados a un **repositorio privado**. Si necesitas acceso a la suite de pruebas para auditoria o desarrollo, por favor solicita acceso enviando un correo a: **alexis.millanao@protonmail.com**
+> **Nota:** Los tests unitarios y de integración están en un **repositorio privado**. Si necesitas acceso a la suite de pruebas para auditoría o desarrollo, por favor solicita acceso enviando un correo a: **alexis.millanao@protonmail.com**
 
-## Resolucion de Errores
-
-| Sintoma | Causa Raiz | Solucion Tecnica |
-| :--- | :--- | :--- |
-| `Error: Not a valid Git repository` | Directorio actual no es repo Git | Ejecutar `igv` desde directorio con `.git/` |
-| `ModuleNotFoundError: No module named 'interactive_git_versioneer'` | Paquete no instalado | Ejecutar `pip install -e .` o `make install` |
-| `API key not configured` | Falta `OPENAI.key` en config | `igv config set OPENAI.key "<tu_api_key>"` |
-| `Base URL not configured` | Falta `OPENAI.baseURL` en config | `igv config set OPENAI.baseURL "<url_proveedor>"` |
-| `Invalid or unconfigured API Key` | API key invalida o expirada | Verificar key en el panel del proveedor |
-| `GitHub CLI is not installed` | Falta `gh` en PATH | Instalar desde https://cli.github.com/ |
-| `Not authenticated` | `gh` sin autenticacion | Ejecutar `gh auth login` |
-| No se muestran commits | HEAD coincide con ultimo tag | Crear nuevos commits antes de etiquetar |
-
-**NOTA:** Para lista completa de errores, ver [docs/operaciones/resolucion_errores.md](docs/operaciones/resolucion_errores.md).
+Ver [docs/desarrollo/tests_ejecucion.md](docs/desarrollo/tests_ejecucion.md) para más información.
 
 ## Contributing
 
