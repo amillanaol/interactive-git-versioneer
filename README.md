@@ -113,8 +113,6 @@ scripts/
   install_menu.py # Menu interactivo de instalacion
 ```
 
-> **Nota sobre tests:** Los tests unitarios y de integracion estan en un repositorio privado por ahora. Para tener acceso, contactar a alexis.millanao@protonmail.com
-
 ## Inicio Rapido
 
 ```bash
@@ -146,8 +144,6 @@ igv tag --auto --push
 | `make dev` | Instala dependencias de desarrollo |
 
 ## Tests
-
-> **Nota:** Los tests unitarios y de integración están en un **repositorio privado**. Si necesitas acceso a la suite de pruebas para auditoría o desarrollo, por favor solicita acceso enviando un correo a: **alexis.millanao@protonmail.com**
 
 Ver [docs/desarrollo/tests_ejecucion.md](docs/desarrollo/tests_ejecucion.md) para más información.
 
