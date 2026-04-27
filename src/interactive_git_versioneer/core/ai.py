@@ -1,18 +1,3 @@
-"""OpenAI-compatible adapter for AI-powered text generation.
-
-Implements the AiService port using the `openai` library, which is
-compatible with OpenAI, Groq, OpenRouter and any provider that follows
-the OpenAI API spec.
-
-Usage (direct):
-    service = OpenAiCompatibleAdapter(api_key=..., base_url=..., model=...)
-    message = service.generate_tag_message(...)
-
-Usage (from config):
-    service = get_ai_service()
-    message = service.generate_tag_message(...)
-"""
-
 from typing import Any, FrozenSet, Optional, Tuple
 
 from ..config import (
@@ -25,9 +10,6 @@ from ..config import (
 )
 from ..domain.services.ai_service import AiService
 
-# Models available on Groq's free plan.
-# Source: https://console.groq.com/docs/rate-limits (fetched 2026-02-25)
-# Models NOT in this set require a Developer/paid plan on Groq.
 _GROQ_FREE_MODELS: FrozenSet[str] = frozenset(
     {
         "allam-2-7b",
@@ -40,7 +22,6 @@ _GROQ_FREE_MODELS: FrozenSet[str] = frozenset(
         "meta-llama/llama-4-maverick-17b-128e-instruct",
         "meta-llama/llama-4-scout-17b-16e-instruct",
         "meta-llama/llama-guard-4-12b",
-        # Versioned variant of the free moonshotai/kimi-k2-instruct
         "moonshotai/kimi-k2-instruct",
         "moonshotai/kimi-k2-instruct-0905",
         "openai/gpt-oss-120b",
@@ -58,8 +39,6 @@ def _build_prompt_from_template(
     locale: str,
     is_tag: bool = False,
 ) -> str:
-    """Build the prompt using the template from prompt.txt or prompt_tags.txt if available."""
-
     if is_tag:
         template: Optional[str] = load_prompt_tags_template()
         detail_level: str = get_tag_detail_level()
@@ -129,23 +108,6 @@ Output only the tag message. No explanations, no alternatives, no additional tex
 
 
 class OpenAiCompatibleAdapter(AiService):
-    """Concrete AiService implementation using the openai library.
-
-    Works with any OpenAI-compatible provider:
-    - OpenAI   (base_url: https://api.openai.com/v1)
-    - Groq     (base_url: https://api.groq.com/openai/v1)
-    - OpenRouter (base_url: https://openrouter.ai/api/v1)
-    - Any self-hosted OpenAI-compatible endpoint
-
-    Args:
-        api_key: The API key for the provider.
-        base_url: The base URL of the OpenAI-compatible endpoint.
-        model: The model identifier to use for completions.
-
-    Raises:
-        ImportError: If the 'openai' library is not installed.
-    """
-
     def __init__(self, api_key: str, base_url: str, model: str) -> None:
         self._api_key = api_key
         self._base_url = base_url
@@ -169,7 +131,6 @@ class OpenAiCompatibleAdapter(AiService):
         max_length: int = 72,
         locale: str = "es",
     ) -> Optional[str]:
-        """Generate a concise git tag message from a commit diff."""
         client: Any = self._get_client()
 
         prompt: str = _build_prompt_from_template(
@@ -208,7 +169,6 @@ class OpenAiCompatibleAdapter(AiService):
         commit_message: str,
         commit_diff: str,
     ) -> Tuple[str, str]:
-        """Classify a commit into a semantic version type (major/minor/patch)."""
         client: Any = self._get_client()
 
         diff_truncated: str = (
@@ -270,39 +230,6 @@ REASON: [max 10 words in Spanish]"""
 
 
 def _is_local_provider(base_url: Optional[str]) -> bool:
-    """Return True if *base_url* points to a local provider (e.g. Ollama)."""
-    if not base_url:
-        return False
-    return "localhost" in base_url or "127.0.0.1" in base_url
-
-
-def get_ai_service() -> AiService:
-    """Factory: build an AiService from the current application configuration.
-
-    Reads OPENAI.key, OPENAI.baseURL and OPENAI.model from ~/.igv/config.json
-    and returns a configured OpenAiCompatibleAdapter.
-
-    Also reads from config.ini for additional settings like provider disabled status.
-
-    Local providers (e.g. Ollama at localhost) do not require a real API key;
-    a dummy value is used automatically in that case.
-
-    Returns:
-        A ready-to-use AiService instance.
-
-    Raises:
-        ValueError: If the API key (for remote providers) or base URL are not configured.
-    """
-    groq_disabled: bool = get_ini_bool("GROQ", "disabled", False)
-    if groq_disabled:
-        raise ValueError(
-            "GROQ provider is disabled in config.ini.\n"
-            "Set GROQ.disabled=false to enable it."
-        )
-
-    api_key: Optional[str] = get_config_value("OPENAI.key")
-    base_url: Optional[str] = get_config_value("OPENAI.baseURL")
-
     if not base_url:
         raise ValueError(
             "Base URL not configured.\n"
@@ -322,10 +249,6 @@ def get_ai_service() -> AiService:
     return OpenAiCompatibleAdapter(api_key=api_key, base_url=base_url, model=model)
 
 
-# ── Backward-compatible module-level helpers ──────────────────────────────────
-# These preserve the existing public API so no callers need to change.
-
-
 def generate_tag_message(
     commit_message: str,
     commit_diff: str,
@@ -333,7 +256,6 @@ def generate_tag_message(
     max_length: int = 72,
     locale: str = "es",
 ) -> Optional[str]:
-    """Generate a git tag message. Delegates to the configured AiService."""
     return get_ai_service().generate_tag_message(
         commit_message=commit_message,
         commit_diff=commit_diff,
@@ -344,7 +266,6 @@ def generate_tag_message(
 
 
 def determine_version_type(commit_message: str, commit_diff: str) -> Tuple[str, str]:
-    """Determine the semantic version type. Delegates to the configured AiService."""
     return get_ai_service().determine_version_type(
         commit_message=commit_message,
         commit_diff=commit_diff,
@@ -352,22 +273,6 @@ def determine_version_type(commit_message: str, commit_diff: str) -> Tuple[str, 
 
 
 def list_available_models() -> list:
-    """Fetch the model catalog from the configured provider's API.
-
-    Calls the provider's ``/models`` endpoint using the credentials in
-    ``~/.igv/config.json``.  Extra fields (context window, owner) are
-    read from provider-specific extensions that Groq and OpenRouter
-    attach to the standard OpenAI model object.
-
-    Returns:
-        List of dicts sorted by model id, each containing:
-        - ``id`` (str): model identifier as used in API calls.
-        - ``context_window`` (Optional[int]): max context in tokens, or None.
-        - ``owned_by`` (str): provider/owner name (may be empty).
-
-        Returns an empty list when config is incomplete or any network
-        or API error occurs.
-    """
     api_key: Optional[str] = get_config_value("OPENAI.key")
     base_url: Optional[str] = get_config_value("OPENAI.baseURL")
 
@@ -390,9 +295,6 @@ def list_available_models() -> list:
 
         result: list = []
         for m in response.data:
-            # Context window field name varies by provider:
-            # Groq → context_window, OpenRouter → context_length.
-            # Both may appear as direct attributes or inside model_extra.
             ctx: Optional[int] = None
             model_extra: dict = getattr(m, "model_extra", None) or {}
             for field in ("context_window", "context_length"):
@@ -401,10 +303,6 @@ def list_available_models() -> list:
                     ctx = int(val)
                     break
 
-            # Determine if the model is free to use.
-            # Groq: no pricing field in API; all models are free within rate limits.
-            # OpenRouter: pricing dict with prompt/completion as string cost per token;
-            #   "0" means free. Models with :free suffix are always free.
             is_free: Optional[bool] = None
             pricing: dict = model_extra.get("pricing") or {}
             if pricing:
@@ -414,11 +312,8 @@ def list_available_models() -> list:
                     is_free = True
                 elif prompt_cost or completion_cost:
                     is_free = False
-            # OpenRouter convention: :free suffix always means free
             if m.id.endswith(":free"):
                 is_free = True
-            # Groq: use the documented free-plan model list as the source of truth.
-            # Models absent from _GROQ_FREE_MODELS require a paid plan.
             if is_free is None and is_groq:
                 is_free = m.id in _GROQ_FREE_MODELS
 
@@ -439,16 +334,6 @@ def list_available_models() -> list:
 
 
 def get_ollama_model_details(model_name: str) -> Optional[dict]:
-    """Fetch detailed info for a single Ollama model.
-
-    Calls the /api/show endpoint to get metadata including context_length.
-
-    Args:
-        model_name: The model identifier (e.g., "llama3.2:latest").
-
-    Returns:
-        Dict with model details (context_length, parameters, etc.) or None on error.
-    """
     base_url: Optional[str] = get_config_value("OPENAI.baseURL")
     if not base_url or ("localhost" not in base_url and "127.0.0.1" not in base_url):
         return None
@@ -480,13 +365,6 @@ def get_ollama_model_details(model_name: str) -> Optional[dict]:
 
 
 def list_ollama_models() -> list:
-    """Fetch model list from Ollama's native /api/tags endpoint.
-
-    Returns size and modified date, unlike the OpenAI-compatible /models endpoint.
-
-    Returns:
-        List of dicts with: id, size (bytes), modified_at (ISO string).
-    """
     base_url: Optional[str] = get_config_value("OPENAI.baseURL")
     if not base_url or ("localhost" not in base_url and "127.0.0.1" not in base_url):
         return []
